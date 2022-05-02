@@ -6,9 +6,10 @@ import microservice_utils
 setup(
     name="microservice-utils",
     version=microservice_utils.__version__,
-    install_requires=[
-    ],
+    extras_require={
+        "events": ["pydantic>1,<2"],
+    },
     packages=find_packages(),
     include_package_data=True,
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
