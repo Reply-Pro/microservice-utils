@@ -4,4 +4,8 @@ Utilities and adapters for speeding up microservice development.
 
 ## Todos
 
-[] JWT validation utils
+- [ ] Events
+- [ ] GCP Pub/Sub
+- [ ] GCP Cloud Tasks
+- [ ] JWT validation utils
+- [ ] Logging
