@@ -4,10 +4,18 @@ import platform
 nox.options.sessions = ["format", "lint", "test"]
 
 
+def _install(session):
+    # M1 Mac workaround for grpcio
+    if platform.system() == "Darwin":
+        session.install("--no-binary", ":all:", "grpcio")
+
+    session.install("-r", "test-requirements.txt")
+
+
 @nox.session(python="3.10", reuse_venv=True)
 def dev(session):
     """A development virtual environment."""
-    session.install("-r", "test-requirements.txt")
+    _install(session)
 
 
 @nox.session(python="3.10", reuse_venv=True)
@@ -24,11 +32,7 @@ def lint(session):
 
 @nox.session(python=["3.9", "3.10"], reuse_venv=True)
 def test(session):
-    # M1 Mac workaround for grpcio
-    if platform.system() == "Darwin":
-        session.install("--no-binary", ":all:", "grpcio")
-
-    session.install("-r", "test-requirements.txt")
+    _install(session)
     session.run(
         "pytest",
         "tests",
