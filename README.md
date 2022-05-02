@@ -1,2 +1,7 @@
 # microservice-utils
-Utilities for speeding up microservice development
+
+Utilities and adapters for speeding up microservice development.
+
+## Todos
+
+[] JWT validation utils
