@@ -51,6 +51,8 @@ Task = namedtuple("Task", "task_url queue payload task_name")
 
 class InMemoryEnqueuer:
     def __init__(self, *args, **kwargs):
+        self._args = args
+        self._kwargs = kwargs
         self._tasks = []
 
     @property
