@@ -1,4 +1,4 @@
-from microservice_utils.adapters.google_cloud.cloud_tasks import InMemoryEnqueuer
+from microservice_utils.google_cloud.adapters.cloud_tasks import InMemoryEnqueuer
 
 
 def test_in_memory_enqueuer():
