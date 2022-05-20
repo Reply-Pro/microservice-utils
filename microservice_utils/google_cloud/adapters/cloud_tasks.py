@@ -4,6 +4,8 @@ from collections import namedtuple
 import ulid
 from google.cloud import tasks_v2
 
+from microservice_utils.google_cloud.dtos import GCPProjectConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -12,16 +14,17 @@ def extract_task_name_from_task_path(task_path: str) -> str:
 
 
 class TaskEnqueuer:
-    def __init__(self, gcp_project_id: str, gcp_region: str):
+    def __init__(self, project: GCPProjectConfig):
         self._client = tasks_v2.CloudTasksClient()
-        self._project_id = gcp_project_id
-        self._region = gcp_region
+        self._project = project
 
     def get_queue_path(self, queue: str) -> str:
-        return self._client.queue_path(self._project_id, self._region, queue)
+        return self._client.queue_path(self._project.id, self._project.region, queue)
 
     def get_task_path(self, queue: str, task_name: str) -> str:
-        return self._client.task_path(self._project_id, self._region, queue, task_name)
+        return self._client.task_path(
+            self._project.id, self._project.region, queue, task_name
+        )
 
     def enqueue_http_request(
         self, url: str, queue: str, payload: bytes, task_name: str = None
