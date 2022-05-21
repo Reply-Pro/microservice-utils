@@ -1,7 +1,7 @@
 import google.auth
 
 
-class GCPProjectConfig:
+class GcpProjectConfig:
     __slots__ = ("id", "region", "service_account_email")
 
     def __init__(self, region: str):

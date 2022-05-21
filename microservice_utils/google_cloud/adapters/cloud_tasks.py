@@ -4,7 +4,7 @@ from collections import namedtuple
 import ulid
 from google.cloud import tasks_v2
 
-from microservice_utils.google_cloud.dtos import GCPProjectConfig
+from microservice_utils.google_cloud.dtos import GcpProjectConfig
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def extract_task_name_from_task_path(task_path: str) -> str:
 
 
 class TaskEnqueuer:
-    def __init__(self, project: GCPProjectConfig):
+    def __init__(self, project: GcpProjectConfig):
         self._client = tasks_v2.CloudTasksClient()
         self._project = project
 

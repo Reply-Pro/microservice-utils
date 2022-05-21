@@ -3,6 +3,7 @@ requires = ['setuptools']
 
 [tool.pytest.ini_options]
 addopts = "-s"
+asyncio_mode = "auto"
 testpaths = "tests"
 
 [tool.black]
