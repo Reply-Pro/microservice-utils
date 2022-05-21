@@ -2,7 +2,7 @@ import typing
 
 from google.cloud import run_v2
 
-from microservice_utils.google_cloud.dtos import GcpProjectConfig
+from microservice_utils.google_cloud.models import GcpProjectConfig
 
 
 async def get_cloud_run_urls(project: GcpProjectConfig) -> list[str]:

@@ -4,7 +4,7 @@ from collections import namedtuple
 import ulid
 from google.cloud import tasks_v2
 
-from microservice_utils.google_cloud.dtos import GcpProjectConfig
+from microservice_utils.google_cloud.models import GcpProjectConfig
 
 logger = logging.getLogger(__name__)
 
