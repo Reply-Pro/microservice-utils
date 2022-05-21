@@ -9,8 +9,8 @@ on:
       - '**'
 
 jobs:
-  ci:
-    name: "🔧 CI"
+  checks:
+    name: "🔎 Test and Lint"
     runs-on: "ubuntu-latest"
 
     steps:
@@ -34,7 +34,7 @@ jobs:
         run: nox -e test
 
   release:
-    needs: [ ci ]
+    needs: [ checks ]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     name: 📦 PyPi Release
     runs-on: "ubuntu-latest"
