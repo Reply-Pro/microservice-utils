@@ -9,6 +9,8 @@ import logging
 import math
 import sys
 
+import ulid
+
 from microservice_utils.constants import LOG_FORMATTER
 
 
@@ -53,6 +55,10 @@ class ContainerEngineHandler(logging.StreamHandler):
         """
         message = super(ContainerEngineHandler, self).format(record)
         return format_stackdriver_json(record, message)
+
+
+def generate_trace_id() -> str:
+    return ulid.new().str
 
 
 def set_up_cloud_logging(

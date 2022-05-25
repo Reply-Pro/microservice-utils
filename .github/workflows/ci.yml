@@ -10,6 +10,7 @@ on:
 
 jobs:
   checks:
+    name: "🔎 Test and Lint"
     runs-on: "ubuntu-latest"
 
     steps:
