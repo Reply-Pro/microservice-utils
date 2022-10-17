@@ -129,3 +129,24 @@ def test_event_envelope_from_published_json_unregistered_event_type():
         "trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd",
         "status": {"sys": "ok"},
     }
+
+
+@pytest.mark.parametrize(
+    "raw_received_message",
+    [
+        # Missing event type
+        b"""{"timestamp": 1642620000, "data": {"status": "ok"}}""",
+        # Missing data
+        b"""{"timestamp": 1642620000, "event_type": "UnregisteredEventOccurred"}""",
+    ],
+)
+def test_event_envelope_from_published_json_unregistered_event_type_bad_schema(
+    raw_received_message,
+):
+    """Test that an exception is raised if the enveloped messaged doesn't have an
+    event type"""
+
+    with pytest.raises(RuntimeError):
+        events.EventEnvelope.from_published_json(
+            raw_received_message, allow_unregistered_events=True
+        )
