@@ -105,11 +105,48 @@ def test_event_envelope_from_published_json_invalid_schema(payload):
         events.EventEnvelope.from_published_json(payload)
 
 
-def test_event_envelope_from_published_json_unknown_event_type():
+def test_event_envelope_from_published_json_unregistered_event_type():
     raw_received_message = b"""
-    {"event_type": "SomethingUnknownHappened", "timestamp": 1642620000, "data":
-    {"trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd" }}
+    {"event_type": "UnregisteredEventOccurred", "timestamp": 1642620000, "data":
+    {"trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd", "status": {"sys": "ok"} }}
     """
 
+    # By default, we expect an exception if an unregistered event is received
     with pytest.raises(RuntimeError):
         events.EventEnvelope.from_published_json(raw_received_message)
+
+    # But we can allow unregistered events
+    message = events.EventEnvelope.from_published_json(
+        raw_received_message, allow_unregistered_events=True
+    )
+
+    assert message.event_type == "UnregisteredEventOccurred"
+    assert message.timestamp == 1642620000
+
+    # Schema is unknown for unregistered events so the data is a dict and nested data
+    # will be dicts instead of model instances
+    assert message.data == {
+        "trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd",
+        "status": {"sys": "ok"},
+    }
+
+
+@pytest.mark.parametrize(
+    "raw_received_message",
+    [
+        # Missing event type
+        b"""{"timestamp": 1642620000, "data": {"status": "ok"}}""",
+        # Missing data
+        b"""{"timestamp": 1642620000, "event_type": "UnregisteredEventOccurred"}""",
+    ],
+)
+def test_event_envelope_from_published_json_unregistered_event_type_bad_schema(
+    raw_received_message,
+):
+    """Test that an exception is raised if the enveloped messaged doesn't have an
+    event type"""
+
+    with pytest.raises(RuntimeError):
+        events.EventEnvelope.from_published_json(
+            raw_received_message, allow_unregistered_events=True
+        )

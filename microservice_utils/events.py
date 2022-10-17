@@ -3,7 +3,7 @@ import logging
 import time
 import typing
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 logger = logging.getLogger("django")
 
@@ -13,6 +13,9 @@ _event_registry: EventRegistry = {}
 
 
 class Event(BaseModel):
+    class Config:
+        frozen = True
+
     @classmethod
     @property
     def name(cls) -> str:
@@ -26,6 +29,9 @@ class EventEnvelope(BaseModel):
     timestamp: int
     data: Event
 
+    class Config:
+        frozen = True
+
     @classmethod
     def create(cls, event: Event) -> "EventEnvelope":
         return cls(
@@ -35,7 +41,9 @@ class EventEnvelope(BaseModel):
         )
 
     @classmethod
-    def from_published_json(cls, message: bytes) -> "EventEnvelope":
+    def from_published_json(
+        cls, message: bytes, allow_unregistered_events: bool = False
+    ) -> "EventEnvelope":
         """Instantiate EventEnvelope from a received message (e.g. from Pub/Sub).
         This facilitates using Event instances in worker handler registries e.g.:
 
@@ -63,13 +71,29 @@ class EventEnvelope(BaseModel):
         try:
             event_type = get_registered_events()[event_type_name]
         except KeyError:
-            raise RuntimeError(
-                f"Received message with unknown event type {event_type_name!r}"
-            )
+            if not allow_unregistered_events:
+                raise RuntimeError(
+                    f"Received message with unknown event type {event_type_name!r}"
+                )
+
+            # Return unregistered event
+            return cls.from_unregistered_event(json_msg)
         else:
             json_msg["data"] = event_type(**data)
 
             return cls(**json_msg)
+
+    @classmethod
+    def from_unregistered_event(cls, message: dict) -> "EventEnvelope":
+        event_type_name = message["event_type"]
+        event_data = message["data"]
+        event_type = create_model(event_type_name, **event_data, __base__=Event)
+
+        return cls(
+            data=event_type(**event_data),
+            event_type=event_type_name,
+            timestamp=message["timestamp"],
+        )
 
     @property
     def event(self) -> Event:
