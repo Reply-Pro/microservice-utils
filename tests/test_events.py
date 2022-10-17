@@ -105,11 +105,20 @@ def test_event_envelope_from_published_json_invalid_schema(payload):
         events.EventEnvelope.from_published_json(payload)
 
 
-def test_event_envelope_from_published_json_unknown_event_type():
+def test_event_envelope_from_published_json_unregistered_event_type():
     raw_received_message = b"""
-    {"event_type": "SomethingUnknownHappened", "timestamp": 1642620000, "data":
-    {"trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd" }}
+    {"event_type": "UnregisteredEventOccurred", "timestamp": 1642620000, "data":
+    {"trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd", "status": {"sys": "ok"} }}
     """
 
-    with pytest.raises(RuntimeError):
-        events.EventEnvelope.from_published_json(raw_received_message)
+    message = events.EventEnvelope.from_published_json(raw_received_message)
+
+    assert message.event_type == "UnregisteredEventOccurred"
+    assert message.timestamp == 1642620000
+
+    # Schema is unknown for unregistered events so the data is a dict and nested data
+    # will be dicts instead of model instances
+    assert message.data == {
+        "trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd",
+        "status": {"sys": "ok"},
+    }
