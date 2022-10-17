@@ -81,7 +81,7 @@ class InMemoryEnqueuer:
         self._tasks = []
 
     @property
-    def enqueued_tasks(self) -> list[tuple]:
+    def enqueued_tasks(self) -> list[Task]:
         return self._tasks
 
     def enqueue_http_request(
