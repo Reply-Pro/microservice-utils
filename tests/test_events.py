@@ -111,7 +111,14 @@ def test_event_envelope_from_published_json_unregistered_event_type():
     {"trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd", "status": {"sys": "ok"} }}
     """
 
-    message = events.EventEnvelope.from_published_json(raw_received_message)
+    # By default, we expect an exception if an unregistered event is received
+    with pytest.raises(RuntimeError):
+        events.EventEnvelope.from_published_json(raw_received_message)
+
+    # But we can allow unregistered events
+    message = events.EventEnvelope.from_published_json(
+        raw_received_message, allow_unregistered_events=True
+    )
 
     assert message.event_type == "UnregisteredEventOccurred"
     assert message.timestamp == 1642620000
