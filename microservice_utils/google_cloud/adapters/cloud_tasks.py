@@ -57,9 +57,9 @@ class TaskEnqueuer:
                 "url": url,
                 "headers": {"Content-type": "application/json"},
                 "body": payload,
+                **extra,
             },
             "name": self.get_task_path(queue, task_name),
-            **extra,
         }
 
         # Send the task
