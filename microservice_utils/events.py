@@ -88,12 +88,12 @@ class EventEnvelope(BaseModel):
 
     @classmethod
     def from_unregistered_event(
-        cls, message: dict, handle_nulls: bool = True
+        cls, message: dict, handle_none_values: bool = True
     ) -> "EventEnvelope":
         event_type_name = message["event_type"]
         event_data = message["data"]
 
-        if handle_nulls:
+        if handle_none_values:
             cls._handle_none_values(event_data)
 
         event_type = create_model(event_type_name, **event_data, __base__=Event)
