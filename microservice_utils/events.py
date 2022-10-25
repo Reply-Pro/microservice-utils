@@ -42,7 +42,10 @@ class EventEnvelope(BaseModel):
 
     @classmethod
     def from_published_json(
-        cls, message: bytes, allow_unregistered_events: bool = False
+        cls,
+        message: bytes,
+        allow_unregistered_events: bool = False,
+        **kwargs: typing.Any,
     ) -> "EventEnvelope":
         """Instantiate EventEnvelope from a received message (e.g. from Pub/Sub).
         This facilitates using Event instances in worker handler registries e.g.:
@@ -77,16 +80,22 @@ class EventEnvelope(BaseModel):
                 )
 
             # Return unregistered event
-            return cls.from_unregistered_event(json_msg)
+            return cls.from_unregistered_event(json_msg, **kwargs)
         else:
             json_msg["data"] = event_type(**data)
 
             return cls(**json_msg)
 
     @classmethod
-    def from_unregistered_event(cls, message: dict) -> "EventEnvelope":
+    def from_unregistered_event(
+        cls, message: dict, handle_nulls: bool = True
+    ) -> "EventEnvelope":
         event_type_name = message["event_type"]
         event_data = message["data"]
+
+        if handle_nulls:
+            cls._handle_none_values(event_data)
+
         event_type = create_model(event_type_name, **event_data, __base__=Event)
 
         return cls(
@@ -98,6 +107,15 @@ class EventEnvelope(BaseModel):
     @property
     def event(self) -> Event:
         return self.data
+
+    @staticmethod
+    def _handle_none_values(data: dict):
+        """Find any None values and replace with False to appease
+        pydantic.create_model"""
+
+        for k, v in data.items():
+            if isinstance(v, type(None)):
+                data[k] = False
 
     def to_publishable_json(self) -> bytes:
         return self.json().encode("utf-8")

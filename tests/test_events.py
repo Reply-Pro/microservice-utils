@@ -167,11 +167,12 @@ def test_event_envelope_from_published_json_unregistered_event_type_null(
     """By default, pydantic.create_model will not handle null. So, by default, we'll
     set any null value to False to appease create_model"""
 
-    event = events.EventEnvelope.from_published_json(
+    message = events.EventEnvelope.from_published_json(
         raw_received_message_with_null, allow_unregistered_events=True
     )
+    event = message.data
 
-    assert isinstance(event.id, UUID)
+    assert isinstance(event.id, str)
     assert isinstance(event.status, bool)
     assert event.status is False
 
