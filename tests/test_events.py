@@ -186,5 +186,5 @@ def test_event_envelope_from_published_json_unregistered_event_type_null_dont_ha
         events.EventEnvelope.from_published_json(
             raw_received_message_with_null,
             allow_unregistered_events=True,
-            handle_nulls=False,
+            handle_none_values=False,
         )
