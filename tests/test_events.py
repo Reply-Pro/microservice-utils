@@ -3,6 +3,7 @@ from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
+from pydantic.errors import ConfigError
 
 from microservice_utils import events
 
@@ -149,4 +150,40 @@ def test_event_envelope_from_published_json_unregistered_event_type_bad_schema(
     with pytest.raises(RuntimeError):
         events.EventEnvelope.from_published_json(
             raw_received_message, allow_unregistered_events=True
+        )
+
+
+@pytest.fixture
+def raw_received_message_with_null() -> bytes:
+    return b"""
+    {"event_type": "UnknownEvent", "timestamp": 1666663140, "data": {
+    "id": "0c3e52ef-28d7-4bec-b20f-480930473f63", "status": null}}
+    """
+
+
+def test_event_envelope_from_published_json_unregistered_event_type_null(
+    raw_received_message_with_null,
+):
+    """By default, pydantic.create_model will not handle null. So, by default, we'll
+    set any null value to False to appease create_model"""
+
+    event = events.EventEnvelope.from_published_json(
+        raw_received_message_with_null, allow_unregistered_events=True
+    )
+
+    assert isinstance(event.id, UUID)
+    assert isinstance(event.status, bool)
+    assert event.status is False
+
+
+def test_event_envelope_from_published_json_unregistered_event_type_null_dont_handle(
+    raw_received_message_with_null,
+):
+    """Allow user to specify the default pydantic.create_model functionality"""
+
+    with pytest.raises(ConfigError):
+        events.EventEnvelope.from_published_json(
+            raw_received_message_with_null,
+            allow_unregistered_events=True,
+            handle_nulls=False,
         )
