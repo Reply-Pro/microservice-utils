@@ -24,6 +24,16 @@ async def get_service_url(
     urls = await url_provider(project)
     matches = [url for url in urls if all(match in url for match in matches)]
 
+    if exclude:
+        non_excluded_matches = []
+
+        for url in matches:
+            for i in exclude:
+                if i not in url:
+                    non_excluded_matches.append(url)
+
+        matches = non_excluded_matches
+
     if len(matches) != 1:
         raise RuntimeError(f"Expected 1 service match, got {len(matches)}")
 
