@@ -12,22 +12,38 @@ async def test_url_provider(*args, **kwargs) -> list[str]:
         "https://staging-accounts-service-oir932o-uc.a.run.app",
         "https://production-accounts-service-0smn3lu-uc.a.run.app",
         "https://staging-photos-service-9fsnd3w-uc.a.run.app",
+        "https://staging-account-photos-service-9fsnd3w-uc.a.run.app",
     ]
 
 
 @pytest.mark.parametrize(
-    "matches,expected",
+    "matches,exclude,expected",
     [
-        (["staging", "photos"], "https://staging-photos-service-9fsnd3w-uc.a.run.app"),
+        (
+            ["staging", "accounts"],
+            None,
+            "https://staging-accounts-service-oir932o-uc.a.run.app",
+        ),
+        (
+            ["staging", "photos"],
+            ["account"],
+            "https://staging-photos-service-9fsnd3w-uc.a.run.app",
+        ),
+        (
+            ["staging", "photos"],
+            ["account-photos"],
+            "https://staging-photos-service-9fsnd3w-uc.a.run.app",
+        ),
         (
             ["production", "accounts"],
+            None,
             "https://production-accounts-service-0smn3lu-uc.a.run.app",
         ),
     ],
 )
-async def test_get_service_url(matches, expected):
+async def test_get_service_url(matches, exclude, expected):
     url = await get_service_url(
-        FakeGcpProjectConfig(), matches, url_provider=test_url_provider
+        FakeGcpProjectConfig(), matches, exclude=exclude, url_provider=test_url_provider
     )
 
     assert url == expected

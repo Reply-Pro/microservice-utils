@@ -16,6 +16,7 @@ async def get_cloud_run_urls(project: GcpProjectConfig) -> list[str]:
 async def get_service_url(
     project: GcpProjectConfig,
     matches: list[str],
+    exclude: list[str] = None,
     url_provider: typing.Callable[
         [GcpProjectConfig], typing.Awaitable[list[str]]
     ] = get_cloud_run_urls,
