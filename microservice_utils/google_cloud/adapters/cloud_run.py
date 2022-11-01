@@ -12,9 +12,7 @@ class AuthorizedHTTPRequest:
 
     def __init__(self):
         self.credential, self.project_id = default()
-        self._headers = {
-            "Authorization": f"Bearer {self.credential.token}"
-        }
+        self._headers = {"Authorization": f"Bearer {self.credential.token}"}
         self._setup_methods()
 
     def _setup_methods(self_outer_scope):
@@ -26,10 +24,7 @@ class AuthorizedHTTPRequest:
             """
 
             def new_method(
-                self,
-                *args,
-                headers: typing.Optional[dict] = None,
-                **kwargs
+                self, *args, headers: typing.Optional[dict] = None, **kwargs
             ) -> httpx.Response:
                 headers = self._set_bearer_token(headers=headers)
 
