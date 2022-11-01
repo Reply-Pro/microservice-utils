@@ -1,8 +1,61 @@
 import typing
 
+import httpx
+from google.auth import default
 from google.cloud import run_v2
 
 from microservice_utils.google_cloud.models import GcpProjectConfig
+
+
+class AuthorizedHTTPRequest:
+    available_request_methods = ["get", "put", "post", "delete"]
+
+    def __init__(self):
+        self.credential, self.project_id = default()
+        self._headers = {
+            "Authorization": f"Bearer {self.credential.token}"
+        }
+        self._setup_methods()
+
+    def _setup_methods(self_outer_scope):
+        def add_method(name: str):
+            """
+            add/replace a method which allows you to call asynchronous
+            methods without having to worry about getting the event
+            loop + running until complete.
+            """
+
+            def new_method(
+                self,
+                *args,
+                headers: typing.Optional[dict] = None,
+                **kwargs
+            ) -> httpx.Response:
+                headers = self._set_bearer_token(headers=headers)
+
+                httpx_method = getattr(httpx, name=name)
+                return httpx_method(*args, headers=headers, **kwargs)
+
+            # set up the doc string
+            new_method.__doc__ = f"Make an authorized {name} request using httpx."
+
+            # set the name of the method
+            new_method.__name__ = name
+
+            # set the method on the class
+            setattr(self_outer_scope, name, new_method)
+
+        for available_request_method in self_outer_scope.available_request_methods:
+            add_method(name=available_request_method)
+
+    def _set_bearer_token(self, headers: typing.Optional[dict] = None) -> dict:
+        if not headers:
+            return self._headers
+
+        new_headers = dict(headers)
+        new_headers.update(self._headers)
+
+        return new_headers
 
 
 async def get_cloud_run_urls(project: GcpProjectConfig) -> list[str]:
