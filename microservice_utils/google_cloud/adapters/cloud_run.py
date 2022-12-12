@@ -27,7 +27,7 @@ class AuthorizedHTTPRequest:
                 self: AuthorizedHTTPRequest = self_outer_scope,
                 *args,
                 headers: typing.Optional[dict] = None,
-                **kwargs
+                **kwargs,
             ) -> httpx.Response:
                 headers = self._set_bearer_token(headers=headers)
 
