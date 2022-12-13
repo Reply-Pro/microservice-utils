@@ -24,11 +24,14 @@ class AuthorizedHTTPRequest:
             """
 
             def new_method(
-                self, *args, headers: typing.Optional[dict] = None, **kwargs
+                self: AuthorizedHTTPRequest = self_outer_scope,
+                *args,
+                headers: typing.Optional[dict] = None,
+                **kwargs,
             ) -> httpx.Response:
                 headers = self._set_bearer_token(headers=headers)
 
-                httpx_method = getattr(httpx, name=name)
+                httpx_method = getattr(httpx, name)
                 return httpx_method(*args, headers=headers, **kwargs)
 
             # set up the doc string
