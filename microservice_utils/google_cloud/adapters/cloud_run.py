@@ -31,7 +31,7 @@ class AuthorizedHTTPRequest:
             ) -> httpx.Response:
                 headers = self._set_bearer_token(headers=headers)
 
-                httpx_method = getattr(httpx, name=name)
+                httpx_method = getattr(httpx, name)
                 return httpx_method(*args, headers=headers, **kwargs)
 
             # set up the doc string
