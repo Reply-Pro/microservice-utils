@@ -1,7 +1,8 @@
 import typing
 
+import google.auth.transport.requests
+import google.oauth2.id_token
 import httpx
-from google.auth import default
 from google.cloud import run_v2
 
 from microservice_utils.google_cloud.models import GcpProjectConfig
@@ -10,9 +11,10 @@ from microservice_utils.google_cloud.models import GcpProjectConfig
 class AuthorizedHTTPRequest:
     available_request_methods = ["get", "put", "post", "delete"]
 
-    def __init__(self):
-        self.credential, self.project_id = default()
-        self._headers = {"Authorization": f"Bearer {self.credential.token}"}
+    def __init__(self, service_url: str):
+        request = google.auth.transport.requests.Request()
+        self.id_token = google.oauth2.id_token.fetch_id_token(request, service_url)
+        self._headers = {"Authorization": f"Bearer {self.id_token}"}
         self._setup_methods()
 
     def _setup_methods(self_outer_scope):
