@@ -13,7 +13,8 @@ class AuthorizedHTTPRequest:
 
     def __init__(self, service_url: typing.Optional[str] = None):
         # configure httpx client
-        timeout = Timeout(10.0, read=15.0)
+        # disable read timeout to call GCP cloud run
+        timeout = Timeout(10.0, read=None)
         self._client = Client(timeout=timeout)
 
         self.service_url = None
