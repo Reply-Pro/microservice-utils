@@ -2,7 +2,7 @@ import typing
 
 import google.auth.transport.requests
 import google.oauth2.id_token
-import httpx
+from httpx import Client, Response, Timeout
 from google.cloud import run_v2
 
 from microservice_utils.google_cloud.models import GcpProjectConfig
@@ -12,13 +12,16 @@ class AuthorizedHTTPRequest:
     available_request_methods = ["get", "put", "post", "delete"]
 
     def __init__(self, service_url: typing.Optional[str] = None):
-        if service_url:
-            self.set_service_url(service_url=service_url)
-            self.set_authorization_header()
+        # configure httpx client
+        timeout = Timeout(10.0, read=15.0)
+        self._client = Client(timeout=timeout)
 
         self.service_url = None
         self._headers = {}
-        self._setup_methods()
+
+        if service_url:
+            self.set_service_url(service_url=service_url)
+            self.set_authorization_header()
 
     def set_service_url(self, service_url: str) -> "AuthorizedHTTPRequest":
         self.service_url = service_url
@@ -33,36 +36,27 @@ class AuthorizedHTTPRequest:
         self._headers["Authorization"] = f"Bearer {id_token}"
         return self
 
-    def _setup_methods(self_outer_scope):
-        def add_method(name: str):
-            """
-            add/replace a method which allows you to call asynchronous
-            methods without having to worry about getting the event
-            loop + running until complete.
-            """
+    def __getattr__(self, item):
+        if item not in self.available_request_methods:
+            raise AttributeError
 
-            def new_method(
-                self: AuthorizedHTTPRequest = self_outer_scope,
-                *args,
-                headers: typing.Optional[dict] = None,
-                **kwargs,
-            ) -> httpx.Response:
-                headers = self._set_bearer_token(headers=headers)
+        def method(
+            *args,
+            headers: typing.Optional[dict] = None,
+            **kwargs,
+        ) -> Response:
+            headers = self._set_bearer_token(headers=headers)
 
-                httpx_method = getattr(httpx, name)
-                return httpx_method(*args, headers=headers, **kwargs)
+            httpx_method = getattr(self._client, item)
+            return httpx_method(*args, headers=headers, **kwargs)
 
-            # set up the doc string
-            new_method.__doc__ = f"Make an authorized {name} request using httpx."
+        # set up the doc string
+        method.__doc__ = f"Make an authorized {item} request using httpx."
 
-            # set the name of the method
-            new_method.__name__ = name
+        # set the name of the method
+        method.__name__ = item
 
-            # set the method on the class
-            setattr(self_outer_scope, name, new_method)
-
-        for available_request_method in self_outer_scope.available_request_methods:
-            add_method(name=available_request_method)
+        return method
 
     def _set_bearer_token(self, headers: typing.Optional[dict] = None) -> dict:
         if not headers:
