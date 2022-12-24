@@ -1,7 +1,8 @@
 import typing
 
+import google.auth.transport.requests
+import google.oauth2.id_token
 import httpx
-from google.auth import default
 from google.cloud import run_v2
 
 from microservice_utils.google_cloud.models import GcpProjectConfig
@@ -10,10 +11,27 @@ from microservice_utils.google_cloud.models import GcpProjectConfig
 class AuthorizedHTTPRequest:
     available_request_methods = ["get", "put", "post", "delete"]
 
-    def __init__(self):
-        self.credential, self.project_id = default()
-        self._headers = {"Authorization": f"Bearer {self.credential.token}"}
+    def __init__(self, service_url: typing.Optional[str] = None):
+        if service_url:
+            self.set_service_url(service_url=service_url)
+            self.set_authorization_header()
+
+        self.service_url = None
+        self._headers = {}
         self._setup_methods()
+
+    def set_service_url(self, service_url: str) -> "AuthorizedHTTPRequest":
+        self.service_url = service_url
+        return self
+
+    def set_authorization_header(self) -> "AuthorizedHTTPRequest":
+        if not self.service_url:
+            raise RuntimeError("Service url is required to set authorization header.")
+
+        request = google.auth.transport.requests.Request()
+        id_token = google.oauth2.id_token.fetch_id_token(request, self.service_url)
+        self._headers["Authorization"] = f"Bearer {id_token}"
+        return self
 
     def _setup_methods(self_outer_scope):
         def add_method(name: str):
@@ -24,11 +42,14 @@ class AuthorizedHTTPRequest:
             """
 
             def new_method(
-                self, *args, headers: typing.Optional[dict] = None, **kwargs
+                self: AuthorizedHTTPRequest = self_outer_scope,
+                *args,
+                headers: typing.Optional[dict] = None,
+                **kwargs,
             ) -> httpx.Response:
                 headers = self._set_bearer_token(headers=headers)
 
-                httpx_method = getattr(httpx, name=name)
+                httpx_method = getattr(httpx, name)
                 return httpx_method(*args, headers=headers, **kwargs)
 
             # set up the doc string
