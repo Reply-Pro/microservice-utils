@@ -66,21 +66,25 @@ class Publisher:
 
 
 class Subscriber:
-    _client: typing.Optional[pubsub.SubscriberClient] = None
+    _clients: dict[str, pubsub.SubscriberClient]
 
     def __init__(self, gcp_project_id: str, *args, prepend_value: str = None, **kwargs):
         self._args = args
+        self._clients = {}
         self._kwargs = kwargs
+        self._futures: dict[str, futures.StreamingPullFuture] = {}
         self._gcp_project_id = gcp_project_id
         self._prepend_value = prepend_value
 
     def __enter__(self) -> "Subscriber":
-        self._client = pubsub.SubscriberClient(**self._kwargs)
         return self
 
     def __exit__(self, *args, **kwargs):
-        self._client.close()
-        self._client = None
+        for client in self._clients.values():
+            client.close()
+
+    def _instantiate_pubsub_client(self, subscription_name: str):
+        self._clients[subscription_name] = pubsub.SubscriberClient(**self._kwargs)
 
     def get_subscription_name(self, friendly_subscription_name: str) -> str:
         return (
@@ -89,12 +93,22 @@ class Subscriber:
             f"{friendly_subscription_name}"
         )
 
+    def shutdown(self):
+        """Initiate a graceful shutdown by canceling all the subscription futures."""
+
+        for future in self._futures.values():
+            future.cancel()
+            future.result()
+
     def subscribe(
-        self, subscription_name: str, handler: typing.Callable[["Message"], None]
+        self,
+        subscription_name: str,
+        handler: typing.Callable[["Message"], None],
+        max_messages: int = 50,
+        **kwargs,
     ) -> "futures.StreamingPullFuture":
         """Subscribe to a topic. Subscription name can optionally have a value
         prepended (e.g. environment name).
-
         If you do prepend a value, the name doesn't need to include the prepended
         value. For example, to subscribe to:
         projects/test/subscriptions/staging.accounts.users.billing,
@@ -103,8 +117,22 @@ class Subscriber:
         """
 
         subscription_name = self.get_subscription_name(subscription_name)
+        self._instantiate_pubsub_client(subscription_name)
 
-        return self._client.subscribe(subscription_name, handler)
+        # subscribe
+        fc = pubsub.types.FlowControl(max_messages=max_messages)
+
+        subscription_future = self._clients[subscription_name].subscribe(
+            subscription_name, handler, flow_control=fc
+        )
+
+        self._futures[subscription_name] = subscription_future
+
+        return subscription_future
+
+    def wait_for_shutdown(self):
+        for future in self._futures.values():
+            future.result()
 
 
 if __name__ == "__main__":
@@ -145,12 +173,11 @@ if __name__ == "__main__":
         subscriber = Subscriber(PROJECT_ID, prepend_value=ENVIRONMENT)
 
         with subscriber:
+            subscriber.subscribe(topic_or_subscription_name, sample_handler)
+
             try:
-                future = subscriber.subscribe(
-                    topic_or_subscription_name, sample_handler
-                )
-                future.result()
+                subscriber.wait_for_shutdown()
             except KeyboardInterrupt:
-                future.cancel()
+                subscriber.shutdown()
     else:
         print(f"Unknown action {action!r}")
