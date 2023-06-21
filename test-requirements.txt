@@ -1,4 +1,5 @@
--e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub]
+-e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,pinecone]
 freezegun
 pytest
 pytest-asyncio
+sentence-transformers
