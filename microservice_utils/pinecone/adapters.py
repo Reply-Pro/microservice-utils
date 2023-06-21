@@ -5,7 +5,7 @@ from pprint import pprint
 from uuid import uuid4
 
 import pinecone
-from pinecone.core.client.models import QueryVector, Vector
+from pinecone.core.client.models import Vector
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ class PineconeAdapter:
 
     def query(
         self,
-        queries: typing.Union[typing.List[QueryVector], typing.List[typing.Tuple]],
+        queries: typing.List[typing.Iterable[float]],
         limit: int = 1,
     ) -> list[EmbeddingResult]:
         """Query the Pinecone index."""
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         ids = []
 
         for i in range(len(docs)):
-            e = embeddings[i]
+            e = embeddings[i].tolist()
             doc_id = str(uuid4())
 
             items.append({"id": doc_id, "values": e, "metadata": {"len": len(docs[i])}})
@@ -113,6 +113,7 @@ if __name__ == "__main__":
         )
 
         query_embedding = model.encode([args.data])
+
         query_results = adapter.query(
             [[float(i) for i in query_embedding[0]]], limit=10
         )
