@@ -17,6 +17,7 @@ setup(
         "gcp_cloud_run": ["google-cloud-run<1"],
         "gcp_cloud_tasks": ["google-cloud-tasks>=2,<3"],
         "gcp_pubsub": ["google-cloud-pubsub>=2,<3", "tenacity>=8,<9"],
+        "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
     },
     install_requires=[
         "ulid-py>=1,<2",
