@@ -16,11 +16,13 @@ pip install microservice-utils[gcp_pubsub]
 - **gcp_cloud_run**: Support for Google Cloud Run with the google-cloud-run client library.
 - **gcp_cloud_tasks**: Support for Google Cloud Tasks with the google-cloud-tasks client library.
 - **gcp_pubsub**: Support for Google Cloud Pub/Sub using the google-cloud-pubsub client library and tenacity for retries.
+- **openai**: Support for completions with the OpenAI API.
+- **pinecone**: Support for semantic search with Pinecone.
 
 To install multiple extras, separate them with commas:
 
 ```bash
-pip install microservice-utils[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub]
+pip install microservice-utils[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,openai,pinecone]
 ```
 
 ## GCP Pub/Sub
