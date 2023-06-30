@@ -1,4 +1,10 @@
-from microservice_utils.openai.adapters import OpenAiChatMessage, OpenAiLlm
+from copy import copy
+
+from microservice_utils.openai.adapters import (
+    FakeOpenAiLlm,
+    OpenAiChatMessage,
+    OpenAiLlm,
+)
 
 
 def test_open_ai_llm_get_masked_chat_messages():
@@ -65,3 +71,36 @@ def test_open_ai_llm_get_masked_chat_messages():
         masked_messages.masker.unmask_data(masked_response)
         == "Dear Bianca, you are the best. May you shine every day!"
     )
+
+
+def test_fake_open_ai_llm():
+    ai_responses = ["Why are you probing me?", "I feel like a lab rat."]
+    expected = [
+        OpenAiChatMessage(role="assistant", content="Why are you probing me?"),
+        OpenAiChatMessage(role="assistant", content="I feel like a lab rat."),
+        OpenAiChatMessage(
+            role="assistant", content="I am your friendly virtual assistant."
+        ),
+        OpenAiChatMessage(
+            role="assistant", content="I am your friendly virtual assistant."
+        ),
+    ]
+
+    # Test chat
+    chat_adapter = FakeOpenAiLlm(predefined_responses=copy(ai_responses))
+    chat_responses = []
+
+    for x in range(4):
+        message = OpenAiChatMessage(role="user", content="Hello assistant!")
+        chat_responses.append(chat_adapter.generate_chat_response(message))
+
+    assert chat_responses == expected
+
+    # Test prompt
+    prompt_adapter = FakeOpenAiLlm(predefined_responses=ai_responses)
+    prompt_responses = []
+
+    for x in range(4):
+        prompt_responses.append(prompt_adapter.generate_response("Hello assistant!"))
+
+    assert prompt_responses == [e.content for e in expected]
