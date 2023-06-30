@@ -78,6 +78,33 @@ class OpenAiLlm:
         return masker.unmask_data(response.choices[0].text)
 
 
+class FakeOpenAiLlm:
+    _default_response = "I am your friendly virtual assistant."
+
+    def __init__(self, predefined_responses: list[str] = None, **kwargs):
+        self._predefined_responses = predefined_responses or []
+
+    @staticmethod
+    def get_masked_chat_messages(
+        unmasked_messages: list[OpenAiChatMessage],
+    ) -> MaskedMessages:
+        return OpenAiLlm.get_masked_chat_messages(unmasked_messages)
+
+    def _get_response(self) -> str:
+        if self._predefined_responses:
+            return self._predefined_responses.pop(0)
+
+        return self._default_response
+
+    def generate_chat_response(
+        self, messages: list[OpenAiChatMessage]
+    ) -> OpenAiChatMessage:
+        return OpenAiChatMessage(role="assistant", content=self._get_response())
+
+    def generate_response(self, prompt: str) -> str:
+        return self._get_response()
+
+
 if __name__ == "__main__":
     """Test the OpenAI adapter.
     --
