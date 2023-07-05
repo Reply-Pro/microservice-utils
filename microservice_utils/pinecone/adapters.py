@@ -136,7 +136,6 @@ if __name__ == "__main__":
         adapter.delete(ids)
         print(f"Deleted vectors with ids: {ids}")
 
-
     parser = argparse.ArgumentParser(description="Add or query documents on Pinecone")
     parser.add_argument("--api-key", type=str, required=True, help="Pinecone API key")
     parser.add_argument(
@@ -166,7 +165,9 @@ if __name__ == "__main__":
 
     # Delete documents sub-command
     query_parser = subparsers.add_parser("delete", help="Delete documents")
-    query_parser.add_argument("--data", type=str, required=True, help="Document ids string")
+    query_parser.add_argument(
+        "--data", type=str, required=True, help="Document ids string"
+    )
     query_parser.set_defaults(func=delete_documents)
 
     # Parse arguments and call sub-command function
