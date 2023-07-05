@@ -25,13 +25,16 @@ class PineconeAdapter:
         self._index_name = index_name
         self._namespace = namespace
 
+    def _get_index(self):
+        pinecone.init(api_key=self._api_key, environment=self._environment)
+        return pinecone.Index(index_name=self._index_name)
+
     def upsert(
         self,
         items: typing.Union[typing.List[Vector], typing.List[tuple], typing.List[dict]],
     ):
         """Upsert items to the Pinecone index."""
-        pinecone.init(api_key=self._api_key, environment=self._environment)
-        index = pinecone.Index(index_name=self._index_name)
+        index = self._get_index()
         index.upsert(items, namespace=self._namespace)
 
     def query(
@@ -40,8 +43,7 @@ class PineconeAdapter:
         limit: int = 1,
     ) -> list[EmbeddingResult]:
         """Query the Pinecone index."""
-        pinecone.init(api_key=self._api_key, environment=self._environment)
-        index = pinecone.Index(index_name=self._index_name)
+        index = self._get_index()
         results = index.query(
             queries=queries,
             top_k=limit,
@@ -59,6 +61,11 @@ class PineconeAdapter:
             )
             for r in results
         ]
+
+    def delete(self, ids: typing.List[str]):
+        """Remove items from the Pinecone index."""
+        index = self._get_index()
+        index.delete(ids, namespace=self._namespace)
 
 
 if __name__ == "__main__":
@@ -121,6 +128,14 @@ if __name__ == "__main__":
         print("Query results")
         pprint(query_results)
 
+    def delete_documents(args):
+        adapter = PineconeAdapter(
+            args.api_key, args.index_name, args.environment, namespace=args.namespace
+        )
+        ids = [args.data]
+        adapter.delete(ids)
+        print(f"Deleted vectors with ids: {ids}")
+
     parser = argparse.ArgumentParser(description="Add or query documents on Pinecone")
     parser.add_argument("--api-key", type=str, required=True, help="Pinecone API key")
     parser.add_argument(
@@ -147,6 +162,13 @@ if __name__ == "__main__":
     query_parser = subparsers.add_parser("query", help="Query documents")
     query_parser.add_argument("--data", type=str, required=True, help="Query string")
     query_parser.set_defaults(func=query_documents)
+
+    # Delete documents sub-command
+    query_parser = subparsers.add_parser("delete", help="Delete documents")
+    query_parser.add_argument(
+        "--data", type=str, required=True, help="Document ids string"
+    )
+    query_parser.set_defaults(func=delete_documents)
 
     # Parse arguments and call sub-command function
     args = parser.parse_args()
