@@ -25,13 +25,16 @@ class PineconeAdapter:
         self._index_name = index_name
         self._namespace = namespace
 
+    def _get_index(self):
+        pinecone.init(api_key=self._api_key, environment=self._environment)
+        return pinecone.Index(index_name=self._index_name)
+
     def upsert(
         self,
         items: typing.Union[typing.List[Vector], typing.List[tuple], typing.List[dict]],
     ):
         """Upsert items to the Pinecone index."""
-        pinecone.init(api_key=self._api_key, environment=self._environment)
-        index = pinecone.Index(index_name=self._index_name)
+        index = self._get_index()
         index.upsert(items, namespace=self._namespace)
 
     def query(
@@ -40,8 +43,7 @@ class PineconeAdapter:
         limit: int = 1,
     ) -> list[EmbeddingResult]:
         """Query the Pinecone index."""
-        pinecone.init(api_key=self._api_key, environment=self._environment)
-        index = pinecone.Index(index_name=self._index_name)
+        index = self._get_index()
         results = index.query(
             queries=queries,
             top_k=limit,
@@ -62,8 +64,7 @@ class PineconeAdapter:
 
     def delete(self, ids: typing.List[str]):
         """Remove items from the Pinecone index."""
-        pinecone.init(api_key=self._api_key, environment=self._environment)
-        index = pinecone.Index(index_name=self._index_name)
+        index = self._get_index()
         index.delete(ids, namespace=self._namespace)
 
 
