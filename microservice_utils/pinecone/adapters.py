@@ -29,6 +29,9 @@ class PineconeAdapter:
         pinecone.init(api_key=self._api_key, environment=self._environment)
         return pinecone.Index(index_name=self._index_name)
 
+    def set_namespace(self, namespace: str):
+        self._namespace = namespace
+
     def upsert(
         self,
         items: typing.Union[typing.List[Vector], typing.List[tuple], typing.List[dict]],
