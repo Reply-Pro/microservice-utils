@@ -1,4 +1,4 @@
--e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,openai,pinecone]
+-e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,novu,openai,pinecone]
 freezegun
 pytest
 pytest-asyncio
