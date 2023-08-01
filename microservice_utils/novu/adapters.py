@@ -20,8 +20,14 @@ class Notifier:
 
 
 class SubscriberManager:
-    def __init__(self, api_key, base_url="https://api.novu.co"):
+    def __init__(self, api_key, base_url: str = "https://api.novu.co"):
         self.subscriber_api = SubscriberApi(base_url, api_key)
+
+    @staticmethod
+    def build_collaborator_id(
+        identifier: str, prefix: str = "nonusercollaborator"
+    ) -> str:
+        ...
 
     def subscribe_user(
         self,
