@@ -16,3 +16,8 @@ def test_build_collaborator_id(identifier, prefix, expected):
         kwargs["prefix"] = prefix
 
     assert SubscriberManager.build_collaborator_id(identifier, **kwargs) == expected
+
+
+def test_build_collaborator_id_no_prefix():
+    with pytest.raises(ValueError):
+        SubscriberManager.build_collaborator_id("random@test.com", prefix=None)

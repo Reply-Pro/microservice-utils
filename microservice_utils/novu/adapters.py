@@ -27,16 +27,19 @@ class SubscriberManager:
     def build_collaborator_id(
         identifier: str, prefix: str = "nonusercollaborator"
     ) -> str:
-        ...
+        if not prefix:
+            raise ValueError("Prefix expected")
+
+        return f"{prefix}:{identifier}"
 
     def subscribe_user(
         self,
         user: UUID,
         email: str,
-        first_name: str = None,
-        last_name: str = None,
-        phone: str = None,
-        **kwargs
+        first_name: typing.Optional[str] = None,
+        last_name: typing.Optional[str] = None,
+        phone: typing.Optional[str] = None,
+        **kwargs,
     ):
         dto = SubscriberDto(
             subscriber_id=str(user),
@@ -44,7 +47,7 @@ class SubscriberManager:
             first_name=first_name,
             last_name=last_name,
             phone=phone,
-            **kwargs
+            **kwargs,
         )
         self.subscriber_api.create(dto)
 
