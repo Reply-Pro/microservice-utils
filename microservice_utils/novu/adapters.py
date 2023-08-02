@@ -20,27 +20,79 @@ class Notifier:
 
 
 class SubscriberManager:
-    def __init__(self, api_key, base_url="https://api.novu.co"):
+    def __init__(self, api_key, base_url: str = "https://api.novu.co"):
         self.subscriber_api = SubscriberApi(base_url, api_key)
+
+    @staticmethod
+    def build_collaborator_id(
+        identifier: str, prefix: str = "nonusercollaborator"
+    ) -> str:
+        """Use this method to build a collaborator identifier"""
+        if not prefix:
+            raise ValueError("Prefix expected")
+
+        return f"{prefix}:{identifier}"
+
+    def _subscribe(
+        self,
+        id_: str,
+        email: str,
+        first_name: typing.Optional[str] = None,
+        last_name: typing.Optional[str] = None,
+        phone: typing.Optional[str] = None,
+        **kwargs,
+    ):
+        dto = SubscriberDto(
+            subscriber_id=id_,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            **kwargs,
+        )
+        self.subscriber_api.create(dto)
+
+    def _unsubscribe(self, id_: str):
+        self.subscriber_api.delete(id_)
+
+    def subscribe_collaborator(
+        self,
+        identifier: str,
+        email: str,
+        first_name: typing.Optional[str] = None,
+        last_name: typing.Optional[str] = None,
+        phone: typing.Optional[str] = None,
+        **kwargs,
+    ):
+        self._subscribe(
+            identifier,
+            email,
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            **kwargs,
+        )
 
     def subscribe_user(
         self,
         user: UUID,
         email: str,
-        first_name: str = None,
-        last_name: str = None,
-        phone: str = None,
-        **kwargs
+        first_name: typing.Optional[str] = None,
+        last_name: typing.Optional[str] = None,
+        phone: typing.Optional[str] = None,
+        **kwargs,
     ):
-        dto = SubscriberDto(
-            subscriber_id=str(user),
-            email=email,
+        self._subscribe(
+            str(user),
+            email,
             first_name=first_name,
             last_name=last_name,
             phone=phone,
-            **kwargs
+            **kwargs,
         )
-        self.subscriber_api.create(dto)
+
+    def unsubscribe_collaborator(self, identifier: str):
+        self._unsubscribe(identifier)
 
     def unsubscribe_user(self, user: UUID):
-        self.subscriber_api.delete(str(user))
+        self._unsubscribe(str(user))
