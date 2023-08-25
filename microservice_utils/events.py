@@ -3,7 +3,7 @@ import logging
 import time
 import typing
 
-from pydantic import ConfigDict, BaseModel, create_model
+from pydantic import ConfigDict, BaseModel, create_model, Extra
 
 logger = logging.getLogger("django")
 
@@ -13,7 +13,7 @@ _event_registry: EventRegistry = {}
 
 
 class Event(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra=Extra.allow)
 
     @classmethod
     @property

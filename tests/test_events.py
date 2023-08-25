@@ -3,9 +3,9 @@ from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
+from pydantic.errors import PydanticUserError
 
 from microservice_utils import events
-from pydantic.errors import PydanticUserError
 
 
 @events.register_event
