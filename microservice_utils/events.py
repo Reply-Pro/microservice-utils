@@ -3,7 +3,7 @@ import logging
 import time
 import typing
 
-from pydantic import BaseModel, create_model
+from pydantic import ConfigDict, BaseModel, create_model
 
 logger = logging.getLogger("django")
 
@@ -13,8 +13,7 @@ _event_registry: EventRegistry = {}
 
 
 class Event(BaseModel):
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     @property
@@ -28,9 +27,7 @@ class EventEnvelope(BaseModel):
     event_type: str
     timestamp: int
     data: Event
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def create(cls, event: Event) -> "EventEnvelope":

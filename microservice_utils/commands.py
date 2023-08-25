@@ -1,12 +1,11 @@
 import json
 import time
 
-from pydantic import BaseModel, create_model
+from pydantic import ConfigDict, BaseModel, create_model
 
 
 class Command(BaseModel):
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     @property
