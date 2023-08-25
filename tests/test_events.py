@@ -5,6 +5,7 @@ import pytest
 from freezegun import freeze_time
 
 from microservice_utils import events
+from pydantic.errors import PydanticUserError
 
 
 @events.register_event
@@ -181,9 +182,9 @@ def test_event_envelope_from_published_json_unregistered_event_type_null_dont_ha
 ):
     """Allow user to specify the default pydantic.create_model functionality"""
 
-    # with pytest.raises(ValidationError):
-    events.EventEnvelope.from_published_json(
-        raw_received_message_with_null,
-        allow_unregistered_events=True,
-        handle_none_values=False,
-    )
+    with pytest.raises(PydanticUserError):
+        events.EventEnvelope.from_published_json(
+            raw_received_message_with_null,
+            allow_unregistered_events=True,
+            handle_none_values=False,
+        )
