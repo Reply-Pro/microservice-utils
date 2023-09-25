@@ -21,21 +21,27 @@ jobs:
         with:
           python-version: '3.9'
           cache: 'pip'
-          cache-dependency-path: setup.py
+          cache-dependency-path: |
+            setup.py
+            test-requirements.txt
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           cache: 'pip'
-          cache-dependency-path: setup.py
+          cache-dependency-path: |
+            setup.py
+            test-requirements.txt
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: setup.py
+          cache-dependency-path: |
+            setup.py
+            test-requirements.txt
 
       - run: |
           pip install nox
@@ -63,7 +69,9 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-          cache-dependency-path: setup.py
+          cache-dependency-path: |
+            setup.py
+            test-requirements.txt
 
       - name: Install pypa/build
         run: |
