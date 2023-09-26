@@ -42,10 +42,13 @@ class GcsObjectRepository:
             raise RuntimeError("The GCS Storage client has not been instantiated.")
 
     def get_full_object_id(self, object_id: str) -> str:
-        if not self._namespace:
+        if self._namespace is None:
             raise RuntimeError("Namespace not set!")
 
-        return f"{self._namespace}{self._delimiter}{object_id}"
+        if self._namespace:
+            return f"{self._namespace}{self._delimiter}{object_id}"
+
+        return object_id
 
     async def add(self, object_id: str, content: bytes, content_type: str) -> str:
         result = await self._get_client().upload(
