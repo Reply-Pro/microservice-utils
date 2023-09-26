@@ -14,12 +14,12 @@ jobs:
     runs-on: "ubuntu-latest"
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         path:
-          - 3.9
-          - 3.10
-          - 3.11
+          - '3.9'
+          - '3.10'
+          - '3.11'
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '${{ matrix.path }}'
+          python-version: ${{ matrix.path }}
           cache: 'pip'
           cache-dependency-path: |
             setup.py
