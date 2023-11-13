@@ -10,12 +10,13 @@ class Notifier:
         self.event_api = EventApi(base_url, api_key)
 
     def send_notification(
-        self, name, users: list[UUID], context: dict[str, typing.Any], **kwargs
+        self, name, users: list[UUID], context: dict[str, typing.Any], overrides: dict[str, typing.Any], **kwargs
     ):
         self.event_api.trigger(
             name=name,  # This is the slug of the workflow name.
             recipients=[str(u) for u in users],
             payload=context,
+            overrides=overrides if overrides else None,
         )
 
 
