@@ -14,7 +14,7 @@ class Notifier:
         name,
         users: list[UUID],
         context: dict[str, typing.Any],
-        overrides: dict[str, typing.Any],
+        overrides: typing.Optional[dict[str, typing.Any]] = None,
         **kwargs,
     ):
         self.event_api.trigger(
