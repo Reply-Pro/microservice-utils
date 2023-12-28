@@ -18,7 +18,7 @@ setup(
         "gcp_cloud_tasks": ["google-cloud-tasks>=2,<3"],
         "gcp_pubsub": ["google-cloud-pubsub>=2,<3", "tenacity>=8,<9"],
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
-        "novu": ["novu==1.3.0"],
+        "novu": ["novu==1.11.0"],
         "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
         "pinecone": ["pinecone-client>=2,<3"],
     },
