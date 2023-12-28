@@ -1,13 +1,14 @@
 import typing
 from uuid import UUID
 
-from novu.api import EventApi, SubscriberApi
+from novu.api import EventApi, SubscriberApi, NotificationsApi
 from novu.dto import SubscriberDto
 
 
 class Notifier:
     def __init__(self, api_key, base_url="https://api.novu.co"):
         self.event_api = EventApi(base_url, api_key)
+        self.notification_api = NotificationsApi(base_url, api_key)
 
     def send_notification(
         self,
@@ -23,6 +24,12 @@ class Notifier:
             payload=context,
             overrides=overrides if overrides else None,
         )
+
+    def get_notifications(
+        self,
+    ):
+        notifications = self.notification_api.list()
+        return notifications
 
 
 class SubscriberManager:
