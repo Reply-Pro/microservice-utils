@@ -8,7 +8,7 @@ from novu.dto import SubscriberDto
 class Notifier:
     def __init__(self, api_key, base_url="https://api.novu.co"):
         self.event_api = EventApi(base_url, api_key)
-        self.notification_api = NotificationsApi(base_url, api_key)
+        self.notification_api = NotificationApi(base_url, api_key)
 
     def send_notification(
         self,
