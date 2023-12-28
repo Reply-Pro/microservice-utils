@@ -25,7 +25,9 @@ class Notifier:
             overrides=overrides if overrides else None,
         )
     
-    def get_notifications(self):
+    def get_notifications(
+        self,
+    ):
         notifications = self.notification_api.list()
         return notifications
 
