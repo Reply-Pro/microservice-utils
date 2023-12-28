@@ -1,7 +1,7 @@
 import typing
 from uuid import UUID
 
-from novu.api import EventApi, SubscriberApi, NotificationsApi
+from novu.api import EventApi, SubscriberApi, NotificationApi
 from novu.dto import SubscriberDto
 
 
