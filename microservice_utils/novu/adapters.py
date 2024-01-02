@@ -1,8 +1,53 @@
 import typing
 from uuid import UUID
-
+from typing import List
 from novu.api import EventApi, SubscriberApi, NotificationApi
 from novu.dto import SubscriberDto
+from dataclasses import dataclass
+
+
+@dataclass
+class ActivityNotificationSubscriberResponseDTO:
+    _id: str
+    email: str
+    first_name: str
+    last_name: str
+    phone: str
+
+
+@dataclass
+class ActivityNotificationTriggerResponseDto:
+    type: str
+    identifier: str
+    variables: List[dict]
+
+
+@dataclass
+class ActivityNotificationTemplateResponseDto:
+    name: str
+    triggers: List[ActivityNotificationTriggerResponseDto]
+    _id: str
+
+
+@dataclass
+class ActivityNotificationDto:
+    _environment_id: str
+    _organization_id: str
+    transaction_id: str
+    created_at: str
+    channels: List[str]
+    subscriber: ActivityNotificationSubscriberResponseDTO
+    template: ActivityNotificationTemplateResponseDto
+    jobs: List[dict]
+    _subscriber: str
+
+
+@dataclass
+class NotificationResponse:
+    page: int
+    has_more: bool
+    page_size: int
+    _data: List[ActivityNotificationDto]
 
 
 class Notifier:
@@ -25,11 +70,17 @@ class Notifier:
             overrides=overrides if overrides else None,
         )
 
-    def get_notifications(
-        self,
-    ):
-        notifications = self.notification_api.list()
-        return notifications
+    def get_notifications(self, page: int) -> NotificationResponse:
+        notifications = self.notification_api.list(page=page)
+
+        page = notifications.page
+        has_more = notifications.has_more
+        page_size = notifications.page_size
+        data = notifications._data
+
+        return NotificationResponse(
+            page=page, has_more=has_more, page_size=page_size, _data=data
+        )
 
 
 class SubscriberManager:
