@@ -1,9 +1,9 @@
 import typing
+from dataclasses import dataclass
 from uuid import UUID
-from typing import List
+
 from novu.api import EventApi, SubscriberApi, NotificationApi
 from novu.dto import SubscriberDto
-from dataclasses import dataclass
 
 
 @dataclass
@@ -19,13 +19,13 @@ class ActivityNotificationSubscriberResponseDTO:
 class ActivityNotificationTriggerResponseDto:
     type: str
     identifier: str
-    variables: List[dict]
+    variables: typing.List[dict]
 
 
 @dataclass
 class ActivityNotificationTemplateResponseDto:
     name: str
-    triggers: List[ActivityNotificationTriggerResponseDto]
+    triggers: typing.List[ActivityNotificationTriggerResponseDto]
     _id: str
 
 
@@ -35,10 +35,10 @@ class ActivityNotificationDto:
     _organization_id: str
     transaction_id: str
     created_at: str
-    channels: List[str]
+    channels: typing.List[str]
     subscriber: ActivityNotificationSubscriberResponseDTO
     template: ActivityNotificationTemplateResponseDto
-    jobs: List[dict]
+    jobs: typing.List[dict]
     _subscriber: str
 
 
@@ -47,7 +47,7 @@ class NotificationResponse:
     page: int
     has_more: bool
     page_size: int
-    _data: List[ActivityNotificationDto]
+    _data: typing.List[ActivityNotificationDto]
 
 
 class Notifier:
