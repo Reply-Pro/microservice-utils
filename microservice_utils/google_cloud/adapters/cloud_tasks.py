@@ -44,9 +44,9 @@ class TaskEnqueuer:
 
         if oidc_token:
             if "service_account_email" not in oidc_token:
-                oidc_token[
-                    "service_account_email"
-                ] = self._project.service_account_email
+                oidc_token["service_account_email"] = (
+                    self._project.service_account_email
+                )
 
             extra["oidc_token"] = oidc_token
 

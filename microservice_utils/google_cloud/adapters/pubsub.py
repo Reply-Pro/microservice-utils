@@ -13,8 +13,7 @@ logging.getLogger("google").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-class PublishError(Exception):
-    ...
+class PublishError(Exception): ...
 
 
 class Publisher:

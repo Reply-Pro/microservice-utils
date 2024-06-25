@@ -9,8 +9,7 @@ from microservice_utils import events
 
 
 @events.register_event
-class FakePaymentInitiated(events.Event):
-    ...
+class FakePaymentInitiated(events.Event): ...
 
 
 @events.register_event
@@ -20,8 +19,7 @@ class FakePaymentSubmitted(events.Event):
 
 
 @events.register_event
-class FakeNotificationSent(events.Event):
-    ...
+class FakeNotificationSent(events.Event): ...
 
 
 @events.register_event
