@@ -7,6 +7,7 @@ from mailchimp_transactional.api_client import ApiClientError
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class SmtpEvent:
     ts: int
@@ -58,7 +59,9 @@ class Notifier:
     def __init__(self, api_key):
         self.client = MailchimpTransactional.Client(api_key)
 
-    def search_notifications(self, query: str, limit: int = 50) -> typing.List[Notification]:
+    def search_notifications(
+        self, query: str, limit: int = 50
+    ) -> typing.List[Notification]:
         try:
             response = self.client.messages.search({"query": query, "limit": limit})
             notifications = [
@@ -71,7 +74,9 @@ class Notifier:
                     smtp_events=[SmtpEvent(**event) for event in item["smtp_events"]],
                     opens=item["opens"],
                     clicks=item["clicks"],
-                    opens_detail=[OpenDetail(**detail) for detail in item["opens_detail"]],
+                    opens_detail=[
+                        OpenDetail(**detail) for detail in item["opens_detail"]
+                    ],
                     clicks_detail=item["clicks_detail"],
                 )
                 for item in response
@@ -93,7 +98,9 @@ class Notifier:
                 smtp_events=[SmtpEvent(**event) for event in response["smtp_events"]],
                 opens=response["opens"],
                 clicks=response["clicks"],
-                opens_detail=[OpenDetail(**detail) for detail in response["opens_detail"]],
+                opens_detail=[
+                    OpenDetail(**detail) for detail in response["opens_detail"]
+                ],
                 clicks_detail=response["clicks_detail"],
             )
             return notification
@@ -101,7 +108,9 @@ class Notifier:
             logger.error(f"Mandrill get notification info error: {error.text}")
             return None
 
-    def get_notification_content(self, message_id: str) -> typing.Optional[ContentResponse]:
+    def get_notification_content(
+        self, message_id: str
+    ) -> typing.Optional[ContentResponse]:
         try:
             response = self.client.messages.content({"id": message_id})
             content = ContentResponse(
@@ -121,4 +130,3 @@ class Notifier:
         except ApiClientError as error:
             logger.error(f"Mandrill get notification content error: {error.text}")
             return None
-        
