@@ -4,6 +4,7 @@ https://github.com/googleapis/python-logging/blob
 /6a1f19d9929137d4a5ec6bd4d758a16ec5b284e1/google/cloud/logging_v2/handlers
 /container_engine.py
 """
+
 import json
 import logging
 import math

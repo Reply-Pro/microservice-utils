@@ -4,7 +4,7 @@ from microservice_utils.google_cloud.adapters.cloud_run import get_service_url
 
 
 class FakeGcpProjectConfig:
-    ...
+    pass
 
 
 async def test_url_provider(*args, **kwargs) -> list[str]:
