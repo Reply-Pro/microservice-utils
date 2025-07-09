@@ -24,7 +24,7 @@ class OpenAiLlm:
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4.1-mini",
         mask_prompts: bool = True,
         max_tokens: int = 2049,
         temperature: int = 0,
@@ -65,8 +65,8 @@ class OpenAiLlm:
 
         return OpenAiChatMessage(role="assistant", content=unmasked_response)
 
-    def generate_response(self, prompt: str) -> str:
-        masker = Masker(prompt)
+    def generate_response(self, chat_prompt: str) -> str:
+        masker = Masker(chat_prompt)
 
         response = openai.Completion.create(
             model=self._model,
@@ -101,7 +101,7 @@ class FakeOpenAiLlm:
     ) -> OpenAiChatMessage:
         return OpenAiChatMessage(role="assistant", content=self._get_response())
 
-    def generate_response(self, prompt: str) -> str:
+    def generate_response(self, chat_prompt: str) -> str:
         return self._get_response()
 
 
@@ -180,9 +180,9 @@ if __name__ == "__main__":
     )
     prompt_parser.set_defaults(func=prompt)
 
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
     try:
-        args.func(args)
+        arguments.func(arguments)
     except AttributeError:
         print("Please choose a command.")
