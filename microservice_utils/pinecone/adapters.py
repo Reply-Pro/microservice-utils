@@ -135,7 +135,7 @@ class PineconeAssistant:
                 word_break = chunk.rfind(' ')
 
                 # Use the closest boundary found
-                break_point = max(sentence_break, word_break)
+                break_point = int(max(sentence_break, word_break))
                 if break_point != -1:
                     chunk = chunk[:break_point + 1]
                     end = start + break_point + 1
