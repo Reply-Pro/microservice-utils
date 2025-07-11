@@ -1,5 +1,6 @@
 import argparse
 import typing
+import re
 
 from dataclasses import dataclass
 from microservice_utils.openai.adapters import OpenAiLlm
@@ -106,35 +107,83 @@ class PineconeAssistant:
         # Conversation history
         self.chat_history = []
 
-    def add_document(self, document: Document, namespace: str) -> str:
+    @staticmethod
+    def chunk_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> list[str]:
+        """
+        Split text into overlapping chunks of a specified size
+        """
+        # Clean and normalize text
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        # If the text is shorter than the chunk size, return it as is
+        if len(text) <= chunk_size:
+            return [text]
+
+        chunks = []
+        start = 0
+        text_length = len(text)
+
+        while start < text_length:
+            # Get a chunk of text
+            end = start + chunk_size
+            chunk = text[start:end]
+
+            # If not at the end, try to break at sentence or word boundary
+            if end < text_length:
+                # Try to find a sentence boundary
+                sentence_break = chunk.rfind('.')
+                word_break = chunk.rfind(' ')
+
+                # Use the closest boundary found
+                break_point = max(sentence_break, word_break)
+                if break_point != -1:
+                    chunk = chunk[:break_point + 1]
+                    end = start + break_point + 1
+
+            chunks.append(chunk.strip())
+            start = end - chunk_overlap
+
+        return chunks
+
+    def add_document(self, document: Document, namespace: str) -> list[str]:
         """
         Add a document to a specific namespace
         """
+        if not document.id:
+            document.id = str(uuid4())
         if namespace not in self.namespaces:
             raise ValueError(f"Namespace {namespace} not configured")
 
-        # Generate embedding
-        embedding = self.embedding_model.encode([document.content])[0]
+        # Split document into chunks
+        chunks = self.chunk_text(document.content)
+        count = len(chunks)
+        chunk_ids = []
 
-        # Generate ID if needed
-        if not document.id:
-            document.id = str(uuid4())
+        # Process each chunk
+        for i, chunk in enumerate(chunks):
+            # Generate chunk ID
+            chunk_id = f"{document.id}_chunk_{i}"
 
-        # Prepare item for Pinecone
-        item = {
-            "id": document.id,
-            "values": embedding.tolist(),
-            "metadata": {
-                "content": document.content,
-                **document.metadata
+            # Generate embedding for chunk
+            embedding = self.embedding_model.encode([chunk])[0]
+
+            # Prepare item for Pinecone
+            item = {
+                "id": chunk_id,
+                "values": embedding.tolist(),
+                "metadata": {
+                    "content": chunk,
+                    "chunk_index": i,
+                    "total_chunks": count,
+                    **document.metadata
+                }
             }
-        }
 
-        # Store in Pinecone
-        self.pinecone.set_namespace(namespace)
-        self.pinecone.upsert([item])
-
-        return document.id
+            # Store in Pinecone
+            self.pinecone.set_namespace(namespace)
+            self.pinecone.upsert([item])
+            chunk_ids.append(chunk_id)
+        return chunk_ids
 
     def search(
             self,
@@ -200,14 +249,13 @@ class PineconeAssistant:
         ])
 
         # Prepare prompt
-        prompt = f"""Based on the following information, please answer the question.
-        If you cannot answer the question based on the provided information, say so.
+        prompt = ("Based on the following information, please answer the question.\n"
+        "If you cannot answer the question based on the provided information, say so.\n"
 
-        Information:
-        {context}
+        "\nInformation:\n"
+        f"{context}\n\n"
 
-        Question: {question}
-        """
+        f"Question: {question}")
 
         # Get response from LLM
         response = self.llm.generate_response(prompt)
