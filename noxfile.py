@@ -11,7 +11,7 @@ def _install(session):
 
     session.install("-r", "test-requirements.txt")
     session.run("python", "-c",
-                "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger_eng'); nltk.download('maxent_ne_chunker_tab')")
+                "import nltk; nltk.download('punkt_tab'); nltk.download('averaged_perceptron_tagger_eng'); nltk.download('maxent_ne_chunker_tab')")
 
 
 @nox.session(python="3.11", reuse_venv=True)
