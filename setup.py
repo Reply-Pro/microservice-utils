@@ -20,9 +20,10 @@ setup(
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
         "novu": ["novu==1.11.0"],
         "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
-        "pinecone": ["pinecone-client>=2,<3"],
-        "mailchimp_transactional": ["mailchimp-transactional==1.0.56"]
-
+        "pinecone": ["pinecone>=6,<8"],
+        "nltk": ["nltk==3.9.1"],
+        "mailchimp_transactional": ["mailchimp-transactional==1.0.56"],
+        "sentence_transformers": ["sentence-transformers==5.0.0"]
     },
     install_requires=[
         "ulid-py>=1,<2",
@@ -30,5 +31,5 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    python_requires=">=3.9",
+    python_requires=">=3.11",
 )

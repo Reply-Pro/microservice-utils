@@ -1,5 +1,4 @@
--e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,gcp_storage,novu,openai,pinecone]
+-e .[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,gcp_storage,novu,nltk,openai,pinecone,sentence_transformers]
 freezegun
 pytest
 pytest-asyncio
-sentence-transformers
