@@ -27,6 +27,7 @@ setup(
     install_requires=[
         "ulid-py>=1,<2",
         "httpx==0.23.0",
+        "nltk==3.9.1",
     ],
     packages=find_packages(),
     include_package_data=True,
