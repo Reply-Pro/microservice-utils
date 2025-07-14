@@ -20,7 +20,7 @@ setup(
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
         "novu": ["novu==1.11.0"],
         "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
-        "pinecone": ["pinecone-client>=6,<8"],
+        "pinecone": ["pinecone>=6,<8"],
         "mailchimp_transactional": ["mailchimp-transactional==1.0.56"],
         "sentence_transformers": ["sentence-transformers==5.0.0"]
     },

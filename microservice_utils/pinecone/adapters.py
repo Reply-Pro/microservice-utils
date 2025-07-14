@@ -10,6 +10,7 @@ from uuid import uuid4
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
+
 @dataclass(frozen=True)
 class EmbeddingResult:
     id: str
