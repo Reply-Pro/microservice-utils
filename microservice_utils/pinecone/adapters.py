@@ -11,6 +11,7 @@ from uuid import uuid4
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
+
 @dataclass
 class Document:
     content: str
@@ -63,7 +64,6 @@ class PineconeAdapter:
             # Generate chunk ID
             chunk_id = f"{document.id}_chunk_{i}"
 
-
             # Generate embedding for chunk
             embedding = self.embedding_model.encode([chunk])[0]
 
@@ -75,8 +75,8 @@ class PineconeAdapter:
                     "content": chunk,
                     "chunk_index": i,
                     "total_chunks": count,
-                    **document.metadata
-                }
+                    **document.metadata,
+                },
             }
 
             # Store in Pinecone
@@ -86,12 +86,14 @@ class PineconeAdapter:
         return chunk_ids
 
     @staticmethod
-    def chunk_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> list[str]:
+    def chunk_text(
+        text: str, chunk_size: int = 1000, chunk_overlap: int = 200
+    ) -> list[str]:
         """
         Split text into overlapping chunks of a specified size
         """
         # Clean and normalize text
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"\s+", " ", text).strip()
 
         # If the text is shorter than the chunk size, return it as is
         if len(text) <= chunk_size:
@@ -109,13 +111,13 @@ class PineconeAdapter:
             # If not at the end, try to break at sentence or word boundary
             if end < text_length:
                 # Try to find a sentence boundary
-                sentence_break = chunk.rfind('.')
-                word_break = chunk.rfind(' ')
+                sentence_break = chunk.rfind(".")
+                word_break = chunk.rfind(" ")
 
                 # Use the closest boundary found
                 break_point = int(max(sentence_break, word_break))
                 if break_point != -1:
-                    chunk = chunk[:break_point + 1]
+                    chunk = chunk[: break_point + 1]
                     end = start + break_point + 1
 
             chunks.append(chunk.strip())
@@ -167,10 +169,10 @@ class PineconeAdapter:
 
         # Get all vectors to find how many chunks exist
         results = self.index.query(
-            vector=[0.0] * 384, # Stand-in vector to match an embedding dimension
+            vector=[0.0] * 384,  # Stand-in vector to match an embedding dimension
             filter={"id": {"$startsWith": f"{document_id}_chunk_"}},
             namespace=self._namespace,
-            include_metadata=False
+            include_metadata=False,
         )
 
         # Extract all chunk IDs for this document
@@ -181,10 +183,7 @@ class PineconeAdapter:
             self.delete(chunk_ids)
 
     def search(
-            self,
-            query: str,
-            namespaces: list[str] = None,
-            limit: int = 3
+        self, query: str, namespaces: list[str] = None, limit: int = 3
     ) -> list[dict]:
         """
         Search across specified namespaces
@@ -205,16 +204,17 @@ class PineconeAdapter:
         for namespace in search_namespaces:
             self.set_namespace(namespace)
             namespace_results = self.query(
-                queries=[query_embedding.tolist()],
-                limit=limit
+                queries=[query_embedding.tolist()], limit=limit
             )
             for result in namespace_results:
-                results.append({
-                    "id": result.id,
-                    "score": result.score,
-                    "metadata": result.metadata,
-                    "namespace": namespace
-                })
+                results.append(
+                    {
+                        "id": result.id,
+                        "score": result.score,
+                        "metadata": result.metadata,
+                        "namespace": namespace,
+                    }
+                )
 
         # Sort by score
         results.sort(key=lambda x: x["score"], reverse=True)
@@ -246,6 +246,7 @@ if __name__ == "__main__":
     --environment 'asia-northeast1-gcp'
     --namespace '2e1dc7a8-9c06-441b-9fa5-c3f0bd7b7114' query --data 'dog'
     """
+
     def add_document(args):
         adapter = PineconeAdapter(
             args.api_key, args.index_name, args.environment, namespace=args.namespace
