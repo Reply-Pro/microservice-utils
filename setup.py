@@ -30,5 +30,5 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    python_requires=">=3.9",
+    python_requires=">=3.11",
 )
