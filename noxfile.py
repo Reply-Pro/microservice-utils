@@ -10,6 +10,8 @@ def _install(session):
         session.install("--no-binary", ":all:", "grpcio")
 
     session.install("-r", "test-requirements.txt")
+    session.run("python", "-c",
+                "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger_eng'); nltk.download('maxent_ne_chunker_tab')")
 
 
 @nox.session(python="3.11", reuse_venv=True)
@@ -33,7 +35,6 @@ def lint(session):
 @nox.session(python="3.11", reuse_venv=True)
 def test(session):
     _install(session)
-    session.run("python", "-c", "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger_eng'); nltk.download('maxent_ne_chunker_tab')")
     session.run(
         "pytest",
         "tests",
