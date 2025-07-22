@@ -8,7 +8,7 @@ from pprint import pprint
 from sentence_transformers import SentenceTransformer
 from uuid import uuid4
 
-from utils import calculate_batch_size
+from microservice_utils.pinecone.utils import calculate_batch_size
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
