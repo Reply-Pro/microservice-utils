@@ -8,6 +8,7 @@ from pprint import pprint
 from sentence_transformers import SentenceTransformer
 from uuid import uuid4
 
+from utils import calculate_batch_size
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
@@ -58,8 +59,11 @@ class PineconeAdapter:
         chunks = self.chunk_text(document.content)
         count = len(chunks)
         chunk_ids = []
+        self.set_namespace(namespace)
 
         # Process each chunk
+        items_to_upsert = []
+        batch_size = None
         for i, chunk in enumerate(chunks):
             # Generate chunk ID
             chunk_id = f"{document.id}_chunk_{i}"
@@ -80,8 +84,12 @@ class PineconeAdapter:
             }
 
             # Store in Pinecone
-            self.set_namespace(namespace)
-            self.upsert([item])
+            items_to_upsert.append(item)
+            if not batch_size and len(items_to_upsert) >= 10:
+                batch_size = calculate_batch_size(items_to_upsert) - 1
+            if i + 1 == count or (batch_size and len(items_to_upsert) >= batch_size):
+                self.upsert(items_to_upsert)
+                items_to_upsert = []
             chunk_ids.append(chunk_id)
         return chunk_ids
 
