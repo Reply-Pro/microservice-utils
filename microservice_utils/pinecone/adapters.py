@@ -3,7 +3,8 @@ import typing
 import re
 
 from dataclasses import dataclass
-from pinecone import Pinecone, Vector
+from pinecone.db_data.dataclasses.vector import Vector
+from pinecone.pinecone import Pinecone
 from pprint import pprint
 from sentence_transformers import SentenceTransformer
 from uuid import uuid4
@@ -38,7 +39,7 @@ class PineconeAdapter:
         self.embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
     def _get_index(self):
-        return self._client.Index(index_name=self._index_name)
+        return self._client.Index(name=self._index_name)
 
     @property
     def index(self) -> Pinecone.Index:
@@ -144,13 +145,13 @@ class PineconeAdapter:
     ) -> list[EmbeddingResult]:
         """Query the Pinecone index."""
         results = self.index.query(
-            queries=queries,
+            vector=queries[0],
             top_k=limit,
             include_metadata=True,
             namespace=self._namespace,
         )
 
-        results = results["results"][0]["matches"]
+        results = results["matches"]
         return [
             EmbeddingResult(
                 id=r["id"],
@@ -282,8 +283,10 @@ if __name__ == "__main__":
 
         query_embedding = adapter.embedding_model.encode([args.data])
 
+        query_vector = query_embedding[0].tolist()
+
         query_results = adapter.query(
-            [[float(i) for i in query_embedding[0]]], limit=10
+            [query_vector], limit=10
         )
 
         print("Query results")
@@ -296,6 +299,45 @@ if __name__ == "__main__":
         ids = [args.data]
         adapter.delete(ids)
         print(f"Deleted vectors with ids: {ids}")
+
+    def add_document_with_adapter(args):
+        def dcode(code):
+            from base64 import b64decode
+            try:
+                return b64decode(code).decode()
+            except Exception as e:
+                print(e.__repr__())
+                return code
+
+        doc_id = str(uuid4())
+
+        print(f"Adding document with document_id:\n{doc_id}")
+
+        adapter = PineconeAdapter(
+            dcode(args.api_key),
+            args.index_name,
+            args.environment,
+            namespace=doc_id
+        )
+
+        with open(args.file, 'r') as f:
+            data = f.read()
+
+        file_name = args.file.rsplit('/', maxsplit=1)[-1]
+        print(f"file:\n{file_name}")
+
+        # Create a Document object with the provided data
+        document = Document(
+            content=data,
+            metadata={
+                "file_name": file_name
+            },  # Add basic metadata
+            id=doc_id  # Let the adapter generate an ID
+        )
+
+        # Add the document and get the chunk IDs
+        chunk_ids = adapter.add_document(document, namespace=doc_id)
+        print(f"Added document with chunk IDs: {chunk_ids}")
 
     parser = argparse.ArgumentParser(description="Add or query documents on Pinecone")
     parser.add_argument("--api-key", type=str, required=True, help="Pinecone API key")
@@ -318,6 +360,11 @@ if __name__ == "__main__":
     add_parser = subparsers.add_parser("add", help="Add a document")
     add_parser.add_argument("--data", type=str, required=True, help="Document string")
     add_parser.set_defaults(func=add_document)
+
+    # Update the add parser to use the new function
+    adapt_parser = subparsers.add_parser("adapt", help="Add a document using the adapter")
+    adapt_parser.add_argument("--file", type=str, required=True, help="Document string")
+    adapt_parser.set_defaults(func=add_document_with_adapter)
 
     # Query documents sub-command
     query_parser = subparsers.add_parser("query", help="Query documents")
