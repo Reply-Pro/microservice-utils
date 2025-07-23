@@ -285,9 +285,7 @@ if __name__ == "__main__":
 
         query_vector = query_embedding[0].tolist()
 
-        query_results = adapter.query(
-            [query_vector], limit=10
-        )
+        query_results = adapter.query([query_vector], limit=10)
 
         print("Query results")
         pprint(query_results)
@@ -303,6 +301,7 @@ if __name__ == "__main__":
     def add_document_with_adapter(args):
         def dcode(code):
             from base64 import b64decode
+
             try:
                 return b64decode(code).decode()
             except Exception as e:
@@ -314,25 +313,20 @@ if __name__ == "__main__":
         print(f"Adding document with document_id:\n{doc_id}")
 
         adapter = PineconeAdapter(
-            dcode(args.api_key),
-            args.index_name,
-            args.environment,
-            namespace=doc_id
+            dcode(args.api_key), args.index_name, args.environment, namespace=doc_id
         )
 
-        with open(args.file, 'r') as f:
+        with open(args.file, "r") as f:
             data = f.read()
 
-        file_name = args.file.rsplit('/', maxsplit=1)[-1]
+        file_name = args.file.rsplit("/", maxsplit=1)[-1]
         print(f"file:\n{file_name}")
 
         # Create a Document object with the provided data
         document = Document(
             content=data,
-            metadata={
-                "file_name": file_name
-            },  # Add basic metadata
-            id=doc_id  # Let the adapter generate an ID
+            metadata={"file_name": file_name},  # Add basic metadata
+            id=doc_id,  # Let the adapter generate an ID
         )
 
         # Add the document and get the chunk IDs
@@ -362,7 +356,9 @@ if __name__ == "__main__":
     add_parser.set_defaults(func=add_document)
 
     # Update the add parser to use the new function
-    adapt_parser = subparsers.add_parser("adapt", help="Add a document using the adapter")
+    adapt_parser = subparsers.add_parser(
+        "adapt", help="Add a document using the adapter"
+    )
     adapt_parser.add_argument("--file", type=str, required=True, help="Document string")
     adapt_parser.set_defaults(func=add_document_with_adapter)
 
