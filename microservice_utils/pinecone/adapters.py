@@ -193,41 +193,36 @@ class PineconeAdapter:
 
     def search(
         self, query: str, namespaces: list[str] = None, limit: int = 3
-    ) -> list[dict]:
+    ) -> list[EmbeddingResult]:
         """
         Search across specified namespaces
         """
         # Use configured namespaces if none specified
         search_namespaces = namespaces or self.namespaces
 
-        # Validate namespaces
-        invalid_namespaces = set(search_namespaces) - set(self.namespaces)
-        if invalid_namespaces:
-            raise ValueError(f"Invalid namespaces: {invalid_namespaces}")
-
         # Generate query embedding
         query_embedding = self.embedding_model.encode([query])[0]
 
         # Search in each namespace
-        results = []
-        for namespace in search_namespaces:
-            self.set_namespace(namespace)
-            namespace_results = self.query(
-                queries=[query_embedding.tolist()], limit=limit
-            )
-            for result in namespace_results:
-                results.append(
-                    {
-                        "id": result.id,
-                        "score": result.score,
-                        "metadata": result.metadata,
-                        "namespace": namespace,
-                    }
-                )
+        results = self.index.query_namespaces(
+            vector=query_embedding.tolist(),
+            top_k=limit,
+            include_metadata=True,
+            namespaces=search_namespaces,
+            metric="cosine",
+        )
 
-        # Sort by score
+        results = results["matches"]
         results.sort(key=lambda x: x["score"], reverse=True)
-        return results
+        return [
+            EmbeddingResult(
+                id=r["id"],
+                score=r["score"],
+                values=r["values"],
+                metadata=r.get("metadata"),
+            )
+            for r in results
+        ]
 
     def set_namespace(self, namespace: str):
         self._namespace = namespace
