@@ -1,8 +1,8 @@
 import logging
 import os
+import tenacity
 import typing
 
-import tenacity
 from google.cloud import pubsub
 
 if typing.TYPE_CHECKING:

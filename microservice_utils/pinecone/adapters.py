@@ -16,6 +16,20 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 @dataclass
 class Document:
+    """
+    Represents a document with content, metadata, and an optional identifier.
+
+    This class serves as a wrapper for textual content, associated metadata,
+    and an optional unique identifier that can be used for various purposes
+    such as indexing or tracking.
+
+    Attributes:
+    content: The textual content of the document.
+    metadata: A dictionary representing metadata associated with the
+              document, such as title, author, or publication date.
+    id: Optional unique identifier for the document. Defaults to None.
+    """
+
     content: str
     metadata: dict
     id: str = None
@@ -42,7 +56,7 @@ class PineconeAdapter:
         return self._client.Index(name=self._index_name)
 
     @property
-    def index(self) -> Pinecone.Index:
+    def index(self):
         return self._get_index()
 
     @property
@@ -192,7 +206,13 @@ class PineconeAdapter:
             self.delete(chunk_ids)
 
     def search(
-        self, query: str, namespaces: list[str] = None, limit: int = 3
+        self,
+        query: str,
+        namespaces: list[str] = None,
+        _filter: typing.Optional[
+            typing.Dict[str, typing.Union[str, float, int, bool, typing.List, dict]]
+        ] = None,
+        limit: int = 3,
     ) -> list[EmbeddingResult]:
         """
         Search across specified namespaces
@@ -210,6 +230,7 @@ class PineconeAdapter:
             include_metadata=True,
             namespaces=search_namespaces,
             metric="cosine",
+            filter=_filter,
         )
 
         results = results["matches"]
@@ -350,7 +371,7 @@ if __name__ == "__main__":
     add_parser.add_argument("--data", type=str, required=True, help="Document string")
     add_parser.set_defaults(func=add_document)
 
-    # Update the add parser to use the new function
+    # Update the add-parser to use the new function
     adapt_parser = subparsers.add_parser(
         "adapt", help="Add a document using the adapter"
     )
