@@ -46,7 +46,7 @@ class TelnyxDetailRecord:
     rate: Optional[float]
     cost: Optional[float]
     currency: Optional[str]
-    call_control_id: Optional[str]
+    call_session_id: Optional[str]
     started_at: Optional[str]
     finished_at: Optional[str]
 
@@ -59,7 +59,7 @@ class TelnyxDetailRecord:
             rate=_to_float(payload.get("rate")),
             cost=_to_float(payload.get("cost")),
             currency=payload.get("currency"),
-            call_control_id=payload.get("call_control_id"),
+            call_session_id=payload.get("telnyx_session_id"),
             started_at=payload.get("started_at"),
             finished_at=payload.get("finished_at"),
         )
@@ -67,7 +67,7 @@ class TelnyxDetailRecord:
     def to_attributes(self) -> dict[str, Any]:
         data = {
             "call_leg_id": self.id,
-            "call_control_id": self.call_control_id,
+            "call_session_id": self.call_session_id,
             "currency": self.currency,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
@@ -157,10 +157,10 @@ class TelnyxAPIClient:
             logger.warning("[TELNYX] Invalid JSON response: %s", exc)
             return None
 
-    def fetch_detail_record(self, call_control_id: str) -> Optional[TelnyxDetailRecord]:
+    def fetch_detail_record(self, call_session_id: str) -> Optional[TelnyxDetailRecord]:
         params = {
             "filter[record_type]": "sip-trunking",
-            "filter[call_control_id]": call_control_id,
+            "filter[telnyx_session_id]": call_session_id,
             "page[size]": 1,
         }
         payload = self._request("GET", "/detail_records", params)
@@ -174,8 +174,8 @@ class TelnyxAPIClient:
         record = TelnyxDetailRecord.from_api(data[0])
         if not record.id:
             logger.warning(
-                "[TELNYX] detail_records response missing id for call_control_id=%s",
-                call_control_id,
+                "[TELNYX] detail_records response missing id for telnyx_session_id=%s",
+                call_session_id,
             )
             return None
 

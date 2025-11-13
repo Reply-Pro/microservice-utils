@@ -23,7 +23,7 @@ def test_fetch_detail_record_returns_payload():
                 "rate": "0.01",
                 "cost": "0.06",
                 "currency": "USD",
-                "call_control_id": "v3:test",
+                "call_session_id": "v3:test",
                 "started_at": "2025-11-12T13:24:16Z",
                 "finished_at": "2025-11-12T13:24:25Z",
             }
@@ -45,7 +45,7 @@ def test_fetch_detail_record_returns_payload():
         "https://example.com/api/detail_records",
         params={
             "filter[record_type]": "sip-trunking",
-            "filter[call_control_id]": "v3:test",
+            "filter[telnyx_session_id]": "v3:test",
             "page[size]": 1,
         },
         headers={"Authorization": "Bearer token"},
