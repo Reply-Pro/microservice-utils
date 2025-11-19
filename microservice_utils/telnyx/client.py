@@ -40,6 +40,14 @@ def _parse_dt(raw: Optional[str]) -> Optional[datetime]:
 
 @dataclass
 class TelnyxDetailRecord:
+    """
+    Represents a Telnyx Call Detail Record (CDR) returned by the /detail_records API.
+
+    This object contains the billing and duration information of a call leg/session,
+    including the billed seconds, rate, cost, and timestamps. It is used for enriching
+    a voice Action with financial and duration metadata after the call ends.
+    """
+
     id: str
     call_sec: Optional[float]
     billed_sec: Optional[float]
@@ -93,6 +101,16 @@ def _extract_download_url(download_urls: dict[str, Any]) -> Optional[str]:
 
 @dataclass
 class TelnyxRecordingInfo:
+    """
+    Represents metadata about a call recording returned
+    by the Telnyx /recordings API.
+
+    Includes basic information such as recording status,
+    audio channels, recording duration,
+    timestamps, and the downloadable URL for audio playback. Used to enrich a completed
+    voice Action with recording information.
+    """
+
     id: str
     status: Optional[str]
     channels: Optional[str]
