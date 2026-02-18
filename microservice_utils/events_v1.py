@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import field_validator, ConfigDict, BaseModel, Field, model_validator
 
 
 def _validate_iso8601(value: str) -> str:
@@ -28,28 +28,28 @@ class EventEnvelopeV1(BaseModel):
     correlation_id: str
     payload: dict[str, Any]
     dedupe_key: Optional[str] = None
+    model_config = ConfigDict(frozen=True, extra="allow")
 
-    class Config:
-        frozen = True
-        extra = "allow"
-
-    @validator("name", "event_id", "account_id", "trace_id", "correlation_id")
+    @field_validator("name", "event_id", "account_id", "trace_id", "correlation_id")
+    @classmethod
     def _non_empty(cls, value: str) -> str:
         if not isinstance(value, str) or not value.strip():
             raise ValueError("value must be a non-empty string")
         return value
 
-    @validator("version")
+    @field_validator("version")
+    @classmethod
     def _version_is_one(cls, value: int) -> int:
         if value != 1:
             raise ValueError("EventEnvelopeV1 only supports version=1")
         return value
 
-    @validator("emitted_at")
+    @field_validator("emitted_at")
+    @classmethod
     def _emitted_at_iso8601(cls, value: str) -> str:
         return _validate_iso8601(value)
 
-    @root_validator
+    @model_validator(mode="before")
     def _payload_account_id_matches(cls, values: dict) -> dict:
         payload = values.get("payload")
         account_id = values.get("account_id")
@@ -73,4 +73,4 @@ class EventEnvelopeV1(BaseModel):
         return cls(**json_msg)
 
     def to_publishable_json(self) -> bytes:
-        return self.json().encode("utf-8")
+        return self.model_dump_json().encode("utf-8")

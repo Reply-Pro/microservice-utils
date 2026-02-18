@@ -1,9 +1,13 @@
-import json
+import logging
 import logging
 import time
 import typing
 
-from pydantic import BaseModel, create_model
+from pydantic import (
+    ConfigDict,
+    BaseModel,
+    SerializeAsAny,
+)
 
 logger = logging.getLogger("django")
 
@@ -13,8 +17,7 @@ _event_registry: EventRegistry = {}
 
 
 class Event(BaseModel):
-    class Config:
-        frozen = True
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     @property
@@ -27,10 +30,8 @@ class EventEnvelope(BaseModel):
 
     event_type: str
     timestamp: int
-    data: Event
-
-    class Config:
-        frozen = True
+    data: SerializeAsAny[Event]
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     def create(cls, event: Event) -> "EventEnvelope":
@@ -61,64 +62,30 @@ class EventEnvelope(BaseModel):
         for handler in handlers:
             handler(event_envelope.data)
         """
-
-        json_msg = json.loads(message)
-
+        event = Event.model_validate_json(message).model_dump()
         try:
-            data = json_msg["data"]
-            event_type_name = json_msg["event_type"]
+            event_type = event["event_type"]
         except KeyError:
             raise RuntimeError("Message doesn't have a valid EventEnvelope schema")
 
-        # Reconstitute Event
         try:
-            event_type = get_registered_events()[event_type_name]
+            data = event["data"]
         except KeyError:
-            if not allow_unregistered_events:
-                raise RuntimeError(
-                    f"Received message with unknown event type {event_type_name!r}"
-                )
+            raise RuntimeError("Message doesn't have a valid EventEnvelope schema")
 
-            # Return unregistered event
-            return cls.from_unregistered_event(json_msg, **kwargs)
-        else:
-            json_msg["data"] = event_type(**data)
-
-            return cls(**json_msg)
-
-    @classmethod
-    def from_unregistered_event(
-        cls, message: dict, handle_none_values: bool = True
-    ) -> "EventEnvelope":
-        event_type_name = message["event_type"]
-        event_data = message["data"]
-
-        if handle_none_values:
-            cls._handle_none_values(event_data)
-
-        event_type = create_model(event_type_name, **event_data, __base__=Event)
+        if event_type not in get_registered_events() and not allow_unregistered_events:
+            raise RuntimeError(
+                f"Received message with unknown event type {event_type!r}"
+            )
 
         return cls(
-            data=event_type(**event_data),
-            event_type=event_type_name,
-            timestamp=message["timestamp"],
+            event_type=event_type,
+            data=data,
+            timestamp=event.get("timestamp"),
         )
 
-    @property
-    def event(self) -> Event:
-        return self.data
-
-    @staticmethod
-    def _handle_none_values(data: dict):
-        """Find any None values and replace with False to appease
-        pydantic.create_model"""
-
-        for k, v in data.items():
-            if isinstance(v, type(None)):
-                data[k] = False
-
     def to_publishable_json(self) -> bytes:
-        return self.json().encode("utf-8")
+        return self.model_dump_json().encode("utf-8")
 
 
 def register_event(event: typing.Type[Event]):

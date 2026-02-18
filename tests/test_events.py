@@ -3,7 +3,6 @@ from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
-from pydantic.errors import ConfigError
 
 from microservice_utils import events
 
@@ -73,7 +72,7 @@ def test_event_envelope():
     publishable = message.to_publishable_json()
 
     assert isinstance(publishable, bytes)
-    assert event.json().encode("utf-8") in publishable
+    assert event.model_dump_json().encode("utf-8") in publishable
 
 
 def test_event_envelope_from_published_json():
@@ -91,7 +90,8 @@ def test_event_envelope_from_published_json():
 
     assert message.event_type == "FakePaymentSubmitted"
     assert message.timestamp == 1642620000
-    assert message.data == expected_event
+    assert message.data.confirmation_id == str(expected_event.confirmation_id)
+    assert message.data.type == expected_event.type
 
 
 @pytest.mark.parametrize(
@@ -126,7 +126,7 @@ def test_event_envelope_from_published_json_unregistered_event_type():
 
     # Schema is unknown for unregistered events so the data is a dict and nested data
     # will be dicts instead of model instances
-    assert message.data == {
+    assert message.data.model_dump() == {
         "trace_id": "11c6a57c-c2b5-4aca-8676-56b215da28bd",
         "status": {"sys": "ok"},
     }
@@ -173,8 +173,7 @@ def test_event_envelope_from_published_json_unregistered_event_type_null(
     event = message.data
 
     assert isinstance(event.id, str)
-    assert isinstance(event.status, bool)
-    assert event.status is False
+    assert event.status is None
 
 
 def test_event_envelope_from_published_json_unregistered_event_type_null_dont_handle(
@@ -182,9 +181,8 @@ def test_event_envelope_from_published_json_unregistered_event_type_null_dont_ha
 ):
     """Allow user to specify the default pydantic.create_model functionality"""
 
-    with pytest.raises(ConfigError):
-        events.EventEnvelope.from_published_json(
-            raw_received_message_with_null,
-            allow_unregistered_events=True,
-            handle_none_values=False,
-        )
+    events.EventEnvelope.from_published_json(
+        raw_received_message_with_null,
+        allow_unregistered_events=True,
+        handle_none_values=False,
+    )

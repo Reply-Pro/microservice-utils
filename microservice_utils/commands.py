@@ -1,12 +1,10 @@
-import json
 import time
 
-from pydantic import BaseModel, create_model
+from pydantic import ConfigDict, BaseModel, SerializeAsAny
 
 
 class Command(BaseModel):
-    class Config:
-        frozen = True
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     @property
@@ -16,7 +14,7 @@ class Command(BaseModel):
 
 class CommandEnvelope(BaseModel):
     command: str
-    parameters: Command
+    parameters: SerializeAsAny[Command]
     timestamp: int
 
     @classmethod
@@ -33,18 +31,13 @@ class CommandEnvelope(BaseModel):
         message: bytes,
     ) -> "CommandEnvelope":
         """Instantiate CommandEnvelope from a received message."""
-
-        json_msg = json.loads(message)
-
-        command = json_msg["command"]
-        parameters = json_msg["parameters"]
-        command_type = create_model(command, **parameters, __base__=Command)
+        command = Command.model_validate_json(message)
 
         return cls(
-            command=command,
-            parameters=command_type(**parameters),
-            timestamp=json_msg["timestamp"],
+            command=command.command,
+            parameters=command.parameters,
+            timestamp=command.timestamp,
         )
 
     def to_publishable_json(self) -> bytes:
-        return self.json().encode("utf-8")
+        return self.model_dump_json().encode("utf-8")
