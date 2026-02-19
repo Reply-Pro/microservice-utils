@@ -1,6 +1,7 @@
 from freezegun import freeze_time
-from microservice_utils.commands import Command, CommandEnvelope
 from pydantic import BaseModel
+
+from microservice_utils.commands import Command, CommandEnvelope
 
 
 class User(BaseModel):
@@ -19,7 +20,6 @@ def test_command_envelope_to_publishable_json():
     )
 
     message = CommandEnvelope.create(command)
-
     assert message.command == "AddNewAccount"
     assert message.timestamp == 1691003400
     assert message.parameters == command
@@ -27,7 +27,7 @@ def test_command_envelope_to_publishable_json():
     publishable = message.to_publishable_json()
 
     assert isinstance(publishable, bytes)
-    assert command.json().encode("utf-8") in publishable
+    assert command.model_dump_json().encode("utf-8") in publishable
 
 
 @freeze_time("2023-08-02 19:10+00:00")
@@ -40,7 +40,7 @@ def test_command_envelope_from_published_json():
     message = CommandEnvelope.from_published_json(raw_message)
 
     assert message.command == "AddNewAccount"
-    assert message.parameters == {
+    assert message.parameters.model_dump() == {
         "title": "Walnut Marine",
         "admin": {"email": "random@test.com"},
     }

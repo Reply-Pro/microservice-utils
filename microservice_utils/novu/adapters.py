@@ -2,8 +2,7 @@ import typing
 from dataclasses import dataclass
 from uuid import UUID
 
-from novu.api import EventApi, SubscriberApi, NotificationApi
-from novu.dto import SubscriberDto
+from novu_py import Novu, TriggerEventRequestDto
 
 
 @dataclass
@@ -51,9 +50,8 @@ class NotificationResponse:
 
 
 class Notifier:
-    def __init__(self, api_key, base_url="https://api.novu.co"):
-        self.event_api = EventApi(base_url, api_key)
-        self.notification_api = NotificationApi(base_url, api_key)
+    def __init__(self, api_key):
+        self.api = Novu(api_key)
 
     def send_notification(
         self,
@@ -63,15 +61,17 @@ class Notifier:
         overrides: typing.Optional[dict[str, typing.Any]] = None,
         **kwargs,
     ):
-        self.event_api.trigger(
-            name=name,  # This is the slug of the workflow name.
-            recipients=[str(u) for u in users],
-            payload=context,
-            overrides=overrides if overrides else None,
+        self.api.trigger(
+            trigger_event_request_dto=TriggerEventRequestDto(
+                name=name,  # This is the slug of the workflow name.
+                recipients=[str(u) for u in users],
+                payload=context,
+                overrides=overrides if overrides else None,
+            )
         )
 
     def get_notifications(self, page: int) -> NotificationResponse:
-        notifications = self.notification_api.list(page=page)
+        notifications = self.api.notifications.list(request={"page": page})
 
         page = notifications.page
         has_more = notifications.has_more
@@ -84,8 +84,8 @@ class Notifier:
 
 
 class SubscriberManager:
-    def __init__(self, api_key, base_url: str = "https://api.novu.co"):
-        self.subscriber_api = SubscriberApi(base_url, api_key)
+    def __init__(self, api_key):
+        self.api = Novu(api_key)
 
     @staticmethod
     def build_collaborator_id(
@@ -106,18 +106,19 @@ class SubscriberManager:
         phone: typing.Optional[str] = None,
         **kwargs,
     ):
-        dto = SubscriberDto(
-            subscriber_id=id_,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            phone=phone,
-            **kwargs,
+        self.api.subscribers.create(
+            create_subscriber_request_dto={
+                "subscriber_id": id_,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "phone": phone,
+                **kwargs,
+            }
         )
-        self.subscriber_api.create(dto)
 
     def _unsubscribe(self, id_: str):
-        self.subscriber_api.delete(id_)
+        self.api.subscribers.delete(subscriber_id=id_)
 
     def subscribe_collaborator(
         self,

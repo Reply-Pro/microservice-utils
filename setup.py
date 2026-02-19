@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from setuptools import setup, find_packages
 
 import microservice_utils
@@ -13,12 +14,12 @@ setup(
     long_description_content_type="text/markdown",
     version=microservice_utils.__version__,
     extras_require={
-        "events": ["pydantic>=1,<2"],
+        "events": ["pydantic>=2,<3"],
         "gcp_cloud_run": ["google-cloud-run<1"],
         "gcp_cloud_tasks": ["google-cloud-tasks>=2,<3"],
         "gcp_pubsub": ["google-cloud-pubsub>=2,<3", "tenacity>=8,<9"],
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
-        "novu": ["novu==1.11.0"],
+        "novu": ["novu-py==3.13.0"],
         "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
         "pinecone": ["pinecone>=6,<8"],
         "nltk": ["nltk==3.9.1"],
@@ -27,7 +28,7 @@ setup(
     },
     install_requires=[
         "ulid-py>=1,<2",
-        "httpx==0.23.0",
+        "httpx==0.28.1",
     ],
     packages=find_packages(),
     include_package_data=True,
