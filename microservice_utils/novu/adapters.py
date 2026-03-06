@@ -63,8 +63,8 @@ class Notifier:
     ):
         self.api.trigger(
             trigger_event_request_dto=TriggerEventRequestDto(
-                name=name,  # This is the slug of the workflow name.
-                recipients=[str(u) for u in users],
+                workflow_id=name,  # This is the slug of the workflow name.
+                to=[str(u) for u in users],
                 payload=context,
                 overrides=overrides if overrides else None,
             )
