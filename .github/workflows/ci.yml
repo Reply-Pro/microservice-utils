@@ -48,6 +48,9 @@ jobs:
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     name: 📦 PyPi Release
     runs-on: "ubuntu-latest"
+    environment: pypi
+    permissions:
+      id-token: write
 
     steps:
       - uses: actions/checkout@v6
