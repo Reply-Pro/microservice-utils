@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 from uuid import UUID
 
-from novu_py import Novu, TriggerEventRequestDto
+from novu_py import Novu, TriggerEventRequestDto, BulkTriggerEventDto
 
 
 @dataclass
@@ -58,7 +58,7 @@ class Notifier:
         name,
         users: list[UUID],
         context: dict[str, typing.Any],
-        overrides: typing.Optional[dict[str, typing.Any]] = None,
+        overrides: typing.Optional[dict] = None,
         **kwargs,
     ):
         self.api.trigger(
@@ -69,6 +69,9 @@ class Notifier:
                 overrides=overrides if overrides else None,
             )
         )
+
+    def send_notifications(self, dto: BulkTriggerEventDto):
+        self.api.trigger_bulk(bulk_trigger_event_dto=dto)
 
     def get_notifications(self, page: int) -> NotificationResponse:
         notifications = self.api.notifications.list(request={"page": page})
