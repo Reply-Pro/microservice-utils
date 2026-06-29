@@ -1,8 +1,12 @@
+import logging
 import typing
 from dataclasses import dataclass
 from uuid import UUID
 
 from novu_py import Novu, TriggerEventRequestDto, BulkTriggerEventDto
+from novu_py.models import ResponseValidationError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -74,15 +78,84 @@ class Notifier:
         self.api.trigger_bulk(bulk_trigger_event_dto=dto)
 
     def get_notifications(self, page: int) -> NotificationResponse:
-        notifications = self.api.notifications.list(request={"page": page})
+        """Read a page of the Novu activity feed, tolerant to non-channel jobs.
 
-        page = notifications.page
-        has_more = notifications.has_more
-        page_size = notifications.page_size
-        data = notifications._data
+        Novu's activity feed includes jobs without a ``providerId`` (in-app /
+        digest / trigger steps), but the SDK's ``ActivityNotificationJobResponseDto``
+        marks ``providerId`` as required, so ``notifications.list()`` raises
+        ``ResponseValidationError`` for the *whole page* when any such job is
+        present — which silently blocked all Novu-sourced "sent" event tracking.
 
+        We parse the response leniently from the raw JSON instead of relying on
+        the strict typed models, so one provider-less job no longer drops the
+        entire page.
+        """
+        try:
+            response = self.api.notifications.list(request={"page": page})
+            result = response.result
+            raw = {
+                "page": result.page,
+                "hasMore": result.has_more,
+                "pageSize": result.page_size,
+                # by_alias keeps the camelCase keys, so this matches the raw-body
+                # shape used in the fallback below (one parsing path for both).
+                "data": [dto.model_dump(by_alias=True) for dto in result.data],
+            }
+        except ResponseValidationError as error:
+            logger.warning(
+                "Novu notifications.list failed strict validation (page %s); "
+                "parsing raw response leniently: %s",
+                page,
+                error,
+            )
+            raw = error.raw_response.json()
+
+        return self._build_notification_response(raw)
+
+    @staticmethod
+    def _build_notification_response(raw: dict) -> NotificationResponse:
+        data = [Notifier._build_notification(item) for item in raw.get("data", [])]
         return NotificationResponse(
-            page=page, has_more=has_more, page_size=page_size, _data=data
+            page=raw.get("page", 0),
+            has_more=raw.get("hasMore", False),
+            page_size=raw.get("pageSize", 0),
+            _data=data,
+        )
+
+    @staticmethod
+    def _build_notification(item: dict) -> "ActivityNotificationDto":
+        subscriber = item.get("subscriber") or {}
+        template = item.get("template") or {}
+        triggers = [
+            ActivityNotificationTriggerResponseDto(
+                type=trigger.get("type", ""),
+                identifier=trigger.get("identifier", ""),
+                variables=trigger.get("variables", []),
+            )
+            for trigger in (template.get("triggers") or [])
+        ]
+        return ActivityNotificationDto(
+            _environment_id=item.get("_environmentId", ""),
+            _organization_id=item.get("_organizationId", ""),
+            transaction_id=item.get("transactionId", ""),
+            created_at=item.get("createdAt", ""),
+            channels=item.get("channels") or [],
+            subscriber=ActivityNotificationSubscriberResponseDTO(
+                _id=subscriber.get("_id", ""),
+                email=subscriber.get("email", ""),
+                first_name=subscriber.get("firstName", ""),
+                last_name=subscriber.get("lastName", ""),
+                phone=subscriber.get("phone", ""),
+            ),
+            template=ActivityNotificationTemplateResponseDto(
+                name=template.get("name", ""),
+                triggers=triggers,
+                _id=template.get("_id", ""),
+            ),
+            # Keep jobs as raw dicts: the consumer accesses jobs[0]["status"] /
+            # jobs[0]["payload"], and this avoids re-validating providerId.
+            jobs=item.get("jobs") or [],
+            _subscriber=item.get("_subscriberId", ""),
         )
 
 
