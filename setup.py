@@ -20,7 +20,7 @@ setup(
         "gcp_pubsub": ["google-cloud-pubsub>=2,<3", "tenacity>=8,<9"],
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
         "novu": ["novu-py==3.13.0"],
-        "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai<1"],
+        "openai": ["masked-ai>=1,<2", "numpy>=1,<2", "openai>=1,<2"],
         "pinecone": ["pinecone>=6,<8"],
         "nltk": ["nltk==3.9.1"],
         "mailchimp_transactional": ["mailchimp-transactional==1.0.56"],
