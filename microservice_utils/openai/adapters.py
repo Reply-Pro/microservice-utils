@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 from pprint import pprint
 
-import openai
+from openai import OpenAI
 from masked_ai.masker import Masker
 
 MASKER_BOUNDARY = " |-rcxmessageboundary-| "
@@ -28,8 +28,13 @@ class OpenAiLlm:
         mask_prompts: bool = True,
         max_tokens: int = 2049,
         temperature: int = 0,
+        base_url: str | None = None,
     ):
-        openai.api_key = api_key
+        # `base_url` defaults to OpenAI's own API (the client's default) when omitted.
+        # Passing an OpenAI-compatible gateway's URL here (e.g. OpenRouter's
+        # "https://openrouter.ai/api/v1") is enough to swap providers without touching
+        # anything else in this class -- the request/response shape is unchanged.
+        self._client = OpenAI(api_key=api_key, base_url=base_url)
         self._mask_prompts = mask_prompts
         self._max_tokens = max_tokens
         self._model = model
@@ -53,14 +58,14 @@ class OpenAiLlm:
     ) -> OpenAiChatMessage:
         masked_messages = self.get_masked_chat_messages(messages)
 
-        response = openai.ChatCompletion.create(
+        response = self._client.chat.completions.create(
             model=self._model,
             messages=masked_messages.messages,
             temperature=self._temperature,
             max_tokens=self._max_tokens,
         )
         unmasked_response = masked_messages.masker.unmask_data(
-            response.choices[0]["message"]["content"]
+            response.choices[0].message.content
         )
 
         return OpenAiChatMessage(role="assistant", content=unmasked_response)
@@ -68,7 +73,7 @@ class OpenAiLlm:
     def generate_response(self, chat_prompt: str) -> str:
         masker = Masker(chat_prompt)
 
-        response = openai.Completion.create(
+        response = self._client.completions.create(
             model=self._model,
             prompt=masker.masked_data,
             max_tokens=self._max_tokens,
