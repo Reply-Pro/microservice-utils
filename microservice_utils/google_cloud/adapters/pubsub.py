@@ -105,6 +105,7 @@ class Subscriber:
         subscription_name: str,
         handler: typing.Callable[["Message"], None],
         max_messages: int = 50,
+        await_callbacks_on_shutdown: bool = False,
         **kwargs,
     ) -> "futures.StreamingPullFuture":
         """Subscribe to a topic. Subscription name can optionally have a value
@@ -114,6 +115,13 @@ class Subscriber:
         projects/test/subscriptions/staging.accounts.users.billing,
         you need only provide "accounts.users.billing", assuming "staging" is the
         prepended value.
+
+        Pass ``await_callbacks_on_shutdown=True`` to make ``shutdown()`` block
+        until in-flight callbacks have finished. The Pub/Sub default is
+        ``False``, which abandons executing callbacks partway through — if a
+        handler acks before it finishes its work, those messages are lost rather
+        than redelivered. Long-lived workers that get rolled (e.g. on a
+        Kubernetes deploy) generally want this on.
         """
 
         subscription_name = self.get_subscription_name(subscription_name)
@@ -123,7 +131,11 @@ class Subscriber:
         fc = pubsub.types.FlowControl(max_messages=max_messages)
 
         subscription_future = self._clients[subscription_name].subscribe(
-            subscription_name, handler, flow_control=fc
+            subscription_name,
+            handler,
+            flow_control=fc,
+            await_callbacks_on_shutdown=await_callbacks_on_shutdown,
+            **kwargs,
         )
 
         self._futures[subscription_name] = subscription_future
