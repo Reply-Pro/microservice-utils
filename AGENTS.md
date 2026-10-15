@@ -4,6 +4,7 @@ Read README.md first. This file only says where things are and what CI enforces.
 
 ## Documentation
 
+- Documentation is written in English only. CI checks every indexed document (`python3 tools/english_check.py`).
 - The index is `docs/manifest.json`. Run `python3 tools/ctx.py <topic>` to find the document for a
   feature before changing it, and update that document in the same pull request.
 - Run `python3 tools/ctx.py --similar "<topic>"` before writing a new document.
