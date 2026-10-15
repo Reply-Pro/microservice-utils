@@ -1,0 +1,4 @@
+handbook commit: 99dcb18 (branch rep-13035-docs-touch-gate, pre-merge)
+2f7312f41c53eb4f1237191ed9fb4a8801d11cf4c16689fd46f2edfd189c0ae3  tools/ctx.py
+36a3725a27673a27e4c061294b1566c20255dba3bfe1044e723de8c7767ebd90  tools/docs_touch_check.py
+36990cf21007dd0651744212b8ab1a2d23cea64901e06bca78b75cc0350e3888  ci/docs-checks.yml
