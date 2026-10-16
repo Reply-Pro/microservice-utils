@@ -1,0 +1,22 @@
+# Copy this file to .github/workflows/docs-checks.yml in the adopting repo.
+# It runs the vendored tools only: nothing is downloaded, no branch is tracked.
+name: docs
+
+on:
+  pull_request:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Document index is valid
+        run: python3 tools/ctx.py --lint
+      - name: Indexed documents are in English
+        run: python3 tools/english_check.py
+      - name: Changed entrypoints have their docs touched
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 tools/docs_touch_check.py --base "origin/${{ github.base_ref }}" --body "$PR_BODY"

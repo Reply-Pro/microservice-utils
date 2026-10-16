@@ -133,3 +133,6 @@ dmypy.json
 .DS_Store
 *.json
 notes.md
+
+# The document index must be tracked even though a rule above ignores it (handbook doc checks).
+!docs/manifest.json
