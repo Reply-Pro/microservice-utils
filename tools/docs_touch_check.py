@@ -16,10 +16,15 @@ check; the reason is mandatory and is printed, so the bypass stays visible.
 
 When the manifest lists `coverage_roots` (for example `["src/"]`), a changed
 file under one of them that no entrypoint covers is reported as a GitHub
-notice annotation. That is advice only: it never fails the check.
+notice annotation. A changed document whose index entry still carries the
+`verified` date it had on the base branch gets a notice too: a reminder to
+decide whether this change checked the document against the code, and to
+move the date only if it did. Nothing is said when the date is already
+today's. Both are advice only: they never fail the check.
 Standard library only; it shells out to git for the changed-file list.
 """
 import argparse
+import datetime
 import json
 import os
 import subprocess
@@ -37,9 +42,7 @@ def changed_files(root, base):
     return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
 
 
-def _under(path, entrypoint):
-    ep = entrypoint.rstrip("/")
-    return path == ep or path.startswith(ep + "/")
+_under = ctx.covers  # one definition of "this file is under that entrypoint", shared with `ctx --for`
 
 
 def base_manifest(root, base, rel_path):
@@ -78,10 +81,30 @@ def required_doc_updates(manifests, changed, touched_entries=()):
                 continue
             if doc.get("path") in changed or doc["id"] in touched_entries:
                 continue
-            hit = next((f for f in sorted(changed) for ep in doc.get("entrypoints", [])
+            hit = next((f for f in sorted(changed) for ep in ctx.local_entrypoints(doc, {own})
                         if _under(f, ep)), None)
             if hit:
                 out.append((doc["id"], doc["path"], hit))
+    return out
+
+
+def unbumped_verified(head_manifests, base_manifests, changed, today=None):
+    """[(id, doc path, old date)] for local entries whose document changed in the pull
+    request while their `verified` date stayed what it was on the base branch, unless that
+    date is already today's (a stacked pull request has nothing to bump)."""
+    changed = set(changed)
+    today = str(today or datetime.date.today())
+    out = []
+    for head, base in zip(head_manifests, base_manifests):
+        own = head.get("repo")
+        before = {d["id"]: d for d in (base or {}).get("documents", [])}
+        for doc in head.get("documents", []):
+            if doc.get("repo") and doc.get("repo") != own:
+                continue
+            if doc.get("path") not in changed or "verified" not in doc:
+                continue
+            if doc["verified"] != today and before.get(doc["id"], {}).get("verified") == doc["verified"]:
+                out.append((doc["id"], doc["path"], doc["verified"]))
     return out
 
 
@@ -89,7 +112,7 @@ def uncovered(manifests, changed):
     """Changed files under a `coverage_roots` dir that no entry's entrypoints cover."""
     roots = [r for m in manifests for r in m.get("coverage_roots", [])]
     entrypoints = [ep for m in manifests for d in m.get("documents", [])
-                   for ep in d.get("entrypoints", [])]
+                   for ep in ctx.local_entrypoints(d, {m.get("repo")})]
     return [f for f in sorted(set(changed))
             if any(_under(f, r) for r in roots) and not any(_under(f, ep) for ep in entrypoints)]
 
@@ -133,6 +156,11 @@ def main(argv=None):
     for path in uncovered(manifests, changed):
         print(f"::notice file={path}::no document covers {path}; "
               f"consider indexing one with this path as an entrypoint (docs/manifest.json).")
+    for mp, head, base in zip(manifest_paths, manifests, bases):
+        for did, path, old in unbumped_verified([head], [base], changed):
+            print(f"::notice file={os.path.relpath(mp, root)}::{path} changed but {did} still says "
+                  f"verified {old}; if this change checked it against the code, set the date to "
+                  f"today, otherwise leave it.")
     print(f"docs check: {len(changed)} changed file(s), nothing undocumented.")
     return 0
 

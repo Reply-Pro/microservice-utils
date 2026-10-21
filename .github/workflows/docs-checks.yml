@@ -1,12 +1,20 @@
 # Copy this file to .github/workflows/docs-checks.yml in the adopting repo.
 # It runs the vendored tools only: nothing is downloaded, no branch is tracked.
+# It runs only on pull requests ready for review, and only for their latest push:
+# a draft is skipped until it is marked ready, and a new push cancels the older run.
 name: docs
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   docs:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
