@@ -1,15 +1,15 @@
 import time
+import typing
 
 from pydantic import ConfigDict, BaseModel, SerializeAsAny
+
+from microservice_utils.common import ClassName
 
 
 class Command(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    @classmethod
-    @property
-    def name(cls) -> str:
-        return cls.__name__
+    name: typing.ClassVar[str] = ClassName()
 
 
 class CommandEnvelope(BaseModel):

@@ -8,6 +8,8 @@ from pydantic import (
     SerializeAsAny,
 )
 
+from microservice_utils.common import ClassName
+
 logger = logging.getLogger("django")
 
 # Used by EventEnvelope
@@ -18,10 +20,7 @@ _event_registry: EventRegistry = {}
 class Event(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    @classmethod
-    @property
-    def name(cls) -> str:
-        return cls.__name__
+    name: typing.ClassVar[str] = ClassName()
 
 
 class EventEnvelope(BaseModel):
