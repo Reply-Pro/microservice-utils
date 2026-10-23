@@ -35,10 +35,13 @@ jobs:
       - run: |
           pip install nox
 
+      # format and lint are pinned to 3.11 in noxfile.py; run them once.
       - name: Check formatting
+        if: matrix.path == '3.11'
         run: nox --non-interactive -e format -- --check
 
       - name: Run linter
+        if: matrix.path == '3.11'
         run: nox --non-interactive -e lint
 
       - name: Test
