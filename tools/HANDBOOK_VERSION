@@ -1,5 +1,5 @@
-handbook commit: 305b028 (branch main)
+handbook commit: 406fdaa (branch main)
 daa3c496e3dc68fd332725def2ce62157dbfc19a70798e48143af00fd2cf30fb  tools/ctx.py
 66865edfbc6cd8656f70d56df5e4be40fcc051ed425ab99e775ad6090a2d5f20  tools/docs_touch_check.py
 e999f87a5f5abf016412d3e1bc88970ef0de83e9ebc0e167a108cc11a9a60ade  tools/english_check.py
-499a05429128351674ca7a83303bc1164a68494a630a1cb320f77f59b9c7e530  ci/docs-checks.yml
+708f2b2340990fb6b81cbf3e0619f13e9fdae16e8780f13d3ff437c607010d17  ci/docs-checks.yml

@@ -2,11 +2,12 @@
 # It runs the vendored tools only: nothing is downloaded, no branch is tracked.
 # It runs only on pull requests ready for review, and only for their latest push:
 # a draft is skipped until it is marked ready, and a new push cancels the older run.
+# It also reruns when the description changes, because `docs-check: skip <reason>` lives there.
 name: docs
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
 
 concurrency:
   group: docs-${{ github.event.pull_request.number }}
