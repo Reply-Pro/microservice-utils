@@ -45,6 +45,18 @@ def test_event(event, expected_event_name):
     assert event.name == expected_event_name
 
 
+def test_event_name_on_an_instance_is_the_class_name():
+    # An extra "name" field must not shadow it: the envelope and the registry
+    # key on the class name.
+    event = FakePaymentInitiated(name="not the event type")
+
+    assert event.name == "FakePaymentInitiated"
+    assert events.EventEnvelope.create(event).event_type == "FakePaymentInitiated"
+    assert (
+        events.get_registered_events()["FakePaymentInitiated"] is FakePaymentInitiated
+    )
+
+
 @freeze_time("2022-01-19 19:20+00:00")
 def test_event_envelope():
     """This test verifies that EventEnvelope creates the correct message schema for

@@ -13,6 +13,13 @@ class AddNewAccount(Command):
     admin: User
 
 
+def test_command_name_is_the_class_name():
+    command = AddNewAccount(title="Pecan", admin=User(email="random@test.com"))
+
+    assert AddNewAccount.name == "AddNewAccount"
+    assert command.name == "AddNewAccount"
+
+
 @freeze_time("2023-08-02 19:10+00:00")
 def test_command_envelope_to_publishable_json():
     command = AddNewAccount(

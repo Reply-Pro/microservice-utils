@@ -19,3 +19,15 @@ def get_event_loop():
     except RuntimeError:
         policy.set_event_loop(loop=policy.new_event_loop())
         return policy.get_event_loop()
+
+
+class ClassName:
+    """Reads as the name of the class it is accessed through.
+
+    ``name: typing.ClassVar[str] = ClassName()`` gives ``Paid.name == "Paid"``
+    on the class and on its instances. It replaces ``@classmethod @property``,
+    which stopped working in Python 3.13.
+    """
+
+    def __get__(self, instance, owner) -> str:
+        return owner.__name__

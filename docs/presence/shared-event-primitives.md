@@ -7,7 +7,8 @@ event means or which topic belongs to which domain.
 
 ## Events and the envelope (`microservice_utils/events.py`)
 
-- `Event`: a pydantic model. Its `name` is the class name. Extra fields are allowed.
+- `Event`: a pydantic model. Its `name` is the class name, read from the class or an instance.
+  Extra fields are allowed.
 - `register_event(cls)`: a decorator that adds an event class to a module-level registry, keyed
   by its `name`.
 - `EventEnvelope`: the message that goes on the wire.
