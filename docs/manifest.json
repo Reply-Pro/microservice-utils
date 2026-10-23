@@ -2,6 +2,47 @@
   "schema_version": 2,
   "repo": "microservice-utils",
   "description": "Document index for microservice-utils. Lookup and lint: python3 tools/ctx.py",
-  "intent_map": {},
-  "documents": []
+  "intent_map": {
+    "events": [
+      "microservice-utils.presence.shared-event-primitives"
+    ],
+    "event-envelope": [
+      "microservice-utils.presence.shared-event-primitives"
+    ],
+    "pubsub": [
+      "microservice-utils.presence.shared-event-primitives"
+    ],
+    "presence": [
+      "microservice-utils.presence.shared-event-primitives"
+    ]
+  },
+  "documents": [
+    {
+      "id": "microservice-utils.presence.shared-event-primitives",
+      "kind": "feature",
+      "topic": "you need to publish or consume an event with EventEnvelope, register an event type, or understand how the Pub/Sub Publisher and Subscriber build topic and subscription names",
+      "path": "docs/presence/shared-event-primitives.md",
+      "aliases": [
+        "shared event primitives",
+        "EventEnvelope",
+        "register_event",
+        "event registry",
+        "pubsub publisher",
+        "pubsub subscriber",
+        "prepend_value",
+        "await_callbacks_on_shutdown"
+      ],
+      "entrypoints": [
+        "microservice_utils/events.py",
+        "microservice_utils/google_cloud/adapters/pubsub.py"
+      ],
+      "related_tests": [
+        "tests/test_events.py",
+        "tests/google_cloud/test_pubsub.py"
+      ],
+      "depends_on": [],
+      "status": "current",
+      "verified": "2026-10-22"
+    }
+  ]
 }
