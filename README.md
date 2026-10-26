@@ -21,12 +21,32 @@ pip install microservice-utils[gcp_pubsub]
 - **openai**: Support for completions with the OpenAI API.
 - **pinecone**: Support for semantic search with Pinecone. The adapter embeds documents with
   sentence-transformers, so this extra installs it too, and with it PyTorch — expect a large download.
+- **telnyx**: Support for the Telnyx messaging API.
 
 To install multiple extras, separate them with commas:
 
 ```bash
 pip install microservice-utils[events,gcp_cloud_run,gcp_cloud_tasks,gcp_pubsub,openai,pinecone]
 ```
+
+## Checks
+
+The checks run with [nox](https://nox.thea.codes), the same way locally and in CI:
+
+```bash
+nox              # format, lint and test
+nox -e check_base check_extras
+nox -e check_extras_heavy
+```
+
+`test` installs every extra into one environment, so it cannot tell whether an extra declares
+what its own modules import. `check_base` and `check_extras` close that gap: each installs the
+package with one extra and nothing else, then imports the modules that extra exists for, so an
+extra that under-declares its dependencies fails here instead of on a user's machine. The mapping
+from extra to modules lives in `noxfile.py`, and adding an extra to `setup.py` without listing it
+there fails the check. `check_extras_heavy` is the same check for the extras that pull PyTorch.
+CI runs it on every pull request as well, in a job of its own so that a download that large does
+not hold up the quick checks.
 
 ## GCP Pub/Sub
 You can subscribe to multiple subscriptions by subsequently calling `subscribe()`. `wait_for_shutdown` will block IO
