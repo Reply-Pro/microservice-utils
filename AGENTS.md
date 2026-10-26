@@ -18,3 +18,7 @@ Read README.md first. This file only says where things are and what CI enforces.
 ## Commands (detected from the repo; verify against README.md)
 
 - `nox -e _install · dev · format · lint · test`
+- `nox -e check_base check_extras` and `nox -e check_extras_heavy`: each extra in `setup.py`
+  is installed on its own and the modules behind it are imported, so a missing per-extra
+  dependency fails. `EXTRA_MODULES` in `noxfile.py` maps extra to modules and has to list
+  every extra `setup.py` declares.

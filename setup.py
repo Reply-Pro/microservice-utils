@@ -27,6 +27,7 @@ setup(
         "openai": ["masked-ai>=1,<2", "openai>=1,<2"],
         "pinecone": ["pinecone>=7,<8", *sentence_transformers_require],
         "nltk": ["nltk==3.9.1"],
+        "telnyx": ["requests>=2,<3"],
         "mailchimp_transactional": ["mailchimp-transactional==1.0.56"],
         "sentence_transformers": sentence_transformers_require,
     },
