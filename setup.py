@@ -7,6 +7,10 @@ import microservice_utils
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
+# The pinecone adapter imports SentenceTransformer at module scope, so the
+# pinecone extra needs this too. Keep the two in step.
+sentence_transformers_require = ["sentence-transformers>=5,<6"]
+
 setup(
     name="microservice-utils",
     license="MIT",
@@ -21,10 +25,10 @@ setup(
         "gcp_storage": ["gcloud-aio-storage>=8,<9"],
         "novu": ["novu-py==3.13.0"],
         "openai": ["masked-ai>=1,<2", "openai>=1,<2"],
-        "pinecone": ["pinecone>=6,<8"],
+        "pinecone": ["pinecone>=7,<8", *sentence_transformers_require],
         "nltk": ["nltk==3.9.1"],
         "mailchimp_transactional": ["mailchimp-transactional==1.0.56"],
-        "sentence_transformers": ["sentence-transformers>=5,<6"]
+        "sentence_transformers": sentence_transformers_require,
     },
     install_requires=[
         "ulid-py>=1,<2",

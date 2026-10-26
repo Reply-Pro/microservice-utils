@@ -19,7 +19,8 @@ pip install microservice-utils[gcp_pubsub]
 - **gcp_storage**: Use GCP Cloud Storage with the async gcloud-aio-storage library.
 - **novu**: Support for the open-source [novu](https://novu.co) notification center.
 - **openai**: Support for completions with the OpenAI API.
-- **pinecone**: Support for semantic search with Pinecone.
+- **pinecone**: Support for semantic search with Pinecone. The adapter embeds documents with
+  sentence-transformers, so this extra installs it too, and with it PyTorch — expect a large download.
 
 To install multiple extras, separate them with commas:
 
