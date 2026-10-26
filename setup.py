@@ -22,7 +22,7 @@ setup(
         "gcp_cloud_run": ["google-cloud-run<1"],
         "gcp_cloud_tasks": ["google-cloud-tasks>=2,<3"],
         "gcp_pubsub": ["google-cloud-pubsub>=2,<3", "tenacity>=8,<9"],
-        "gcp_storage": ["gcloud-aio-storage>=8,<9"],
+        "gcp_storage": ["gcloud-aio-storage>=9,<10"],
         "novu": ["novu-py==3.13.0"],
         "openai": ["masked-ai>=1,<2", "openai>=1,<2"],
         "pinecone": ["pinecone>=7,<8", *sentence_transformers_require],
