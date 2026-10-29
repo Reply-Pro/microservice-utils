@@ -3,29 +3,52 @@
 # It runs only on pull requests ready for review, and only for their latest push:
 # a draft is skipped until it is marked ready, and a new push cancels the older run.
 # It also reruns when the description changes, because `docs-check: skip <reason>` lives there.
+#
+# Trust model: the check must not be something the pull request it checks can switch off.
+# On pull_request_target GitHub runs this workflow as it is on the base branch, and the tools
+# run from a checkout of the base branch (base/). The pull request is checked out separately
+# (pr/) and only read: its files are data to the tools, never executed, so a pull request
+# that edits the tools or this workflow is still checked by the versions already merged.
+# The job has no secrets and a read-only token that is not kept in either checkout. Never
+# add a step that runs anything from pr/.
 name: docs
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review, edited]
 
+# Its own group: a branch that has not merged main yet still runs the old pull_request copy
+# of this workflow, in the group docs-<number>; sharing it, each run cancelled the other.
 concurrency:
-  group: docs-${{ github.event.pull_request.number }}
+  group: docs-trusted-${{ github.event.pull_request.number }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   docs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Trusted tools (base branch)
+        uses: actions/checkout@v4
         with:
+          path: base
+          persist-credentials: false
+      - name: The pull request, as data
+        uses: actions/checkout@v4
+        with:
+          path: pr
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Document index is valid
-        run: python3 tools/ctx.py --lint
+        run: python3 base/tools/ctx.py --root pr --lint
       - name: Indexed documents are in English
-        run: python3 tools/english_check.py
-      - name: Changed entrypoints have their docs touched
+        run: python3 base/tools/english_check.py --root pr
+      - name: Changed code has its docs updated
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: python3 tools/docs_touch_check.py --base "origin/${{ github.base_ref }}" --body "$PR_BODY"
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 base/tools/docs_touch_check.py --root pr --base "origin/$BASE_REF" --body "$PR_BODY"
