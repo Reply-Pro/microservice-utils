@@ -1,0 +1,35 @@
+name: Set up nox on uv
+description: >-
+  Python, uv and nox for a job that runs nox sessions. Run the sessions with
+  `nox --default-venv-backend uv` so they install with uv rather than pip.
+
+inputs:
+  python-version:
+    description: The Python version to set up.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # No pip cache: it held the PyTorch wheels the heavy extras pull, and
+    # restoring and saving that took longer than the install it spared.
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    # The cache keeps what uv builds from source distributions. setup-uv drops
+    # downloaded PyPI wheels before saving, so the cache stays small.
+    - name: Set up uv
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      with:
+        enable-cache: true
+        cache-suffix: py${{ inputs.python-version }}
+        cache-dependency-glob: |
+          setup.py
+          test-requirements.txt
+
+    # Plain nox: its uv backend runs the uv set up above, not a second copy.
+    - name: Install nox
+      shell: bash
+      run: timeout 5m uv pip install --system nox

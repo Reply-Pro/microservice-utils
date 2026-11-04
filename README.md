@@ -39,6 +39,10 @@ nox -e check_base check_extras
 nox -e check_extras_heavy
 ```
 
+CI runs every session with `--default-venv-backend uv`, so the environments install with
+[uv](https://docs.astral.sh/uv/) instead of pip. With uv installed, add the same flag locally
+for much faster installs.
+
 `test` installs every extra into one environment, so it cannot tell whether an extra declares
 what its own modules import. `check_base` and `check_extras` close that gap: each installs the
 package with one extra and nothing else, then imports the modules that extra exists for, so an

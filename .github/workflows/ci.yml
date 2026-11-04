@@ -23,29 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up nox
+        uses: ./.github/actions/setup-nox
         with:
           python-version: ${{ matrix.path }}
-          cache: 'pip'
-          cache-dependency-path: |
-            setup.py
-            test-requirements.txt
-
-      - run: |
-          pip install nox
 
       # format and lint are pinned to 3.11 in noxfile.py; run them once.
       - name: Check formatting
         if: matrix.path == '3.11'
-        run: nox --non-interactive -e format -- --check
+        run: nox --non-interactive --default-venv-backend uv -e format -- --check
 
       - name: Run linter
         if: matrix.path == '3.11'
-        run: nox --non-interactive -e lint
+        run: nox --non-interactive --default-venv-backend uv -e lint
 
       - name: Test
-        run: nox --python ${{ matrix.path }} -e test
+        run: nox --non-interactive --default-venv-backend uv --python ${{ matrix.path }} -e test
 
   extras:
     name: "📦 Extra imports"
@@ -54,20 +47,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up nox
+        uses: ./.github/actions/setup-nox
         with:
           python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: setup.py
-
-      - run: |
-          pip install nox
 
       # The test job installs every extra into one environment, so it cannot
       # see a missing per-extra dependency. These install one extra at a time.
       - name: Check the base install and the light extras
-        run: nox --non-interactive -e check_base check_extras
+        run: nox --non-interactive --default-venv-backend uv -e check_base check_extras
 
   extras-heavy:
     name: "📦 Extra imports (PyTorch)"
@@ -76,20 +64,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up nox
+        uses: ./.github/actions/setup-nox
         with:
           python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: setup.py
-
-      - run: |
-          pip install nox
 
       # Split from the extras job because these pull PyTorch, so they are slow
       # and must not hold up the quick checks.
       - name: Check the extras that pull PyTorch
-        run: nox --non-interactive -e check_extras_heavy
+        run: nox --non-interactive --default-venv-backend uv -e check_extras_heavy
 
   release:
     needs: [ checks, extras, extras-heavy ]
@@ -107,10 +90,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: |
-            setup.py
-            test-requirements.txt
 
       - name: Install pypa/build
         run: |
