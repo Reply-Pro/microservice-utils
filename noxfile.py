@@ -30,7 +30,7 @@ EXTRA_MODULES = {
     # Nothing under microservice_utils imports nltk; only the dev environment
     # downloads its corpora.
     "nltk": (),
-    "novu": ("microservice_utils.novu.adapters",),
+    "novu": ("microservice_utils.novu.adapters", "microservice_utils.novu.mirror"),
     "openai": ("microservice_utils.openai.adapters",),
     "pinecone": ("microservice_utils.pinecone.adapters",),
     # Only the pinecone adapter imports sentence_transformers, and the pinecone

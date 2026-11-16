@@ -1,12 +1,77 @@
 import logging
+import os
+import threading
 import typing
 from dataclasses import dataclass
 from uuid import UUID
 
+import httpx
 from novu_py import Novu, TriggerEventRequestDto, BulkTriggerEventDto
 from novu_py.models import ResponseValidationError
 
+from microservice_utils.novu.mirror import NovuMirror
+
 logger = logging.getLogger(__name__)
+
+#: Copy every write Novu accepts to this Novu-compatible endpoint (see ``mirror.py``).
+#: Both must be set; without them nothing changes.
+MIRROR_URL_ENV = "NOVU_MIRROR_URL"
+MIRROR_API_KEY_ENV = "NOVU_MIRROR_API_KEY"
+
+_mirrors: dict[tuple[str, str], NovuMirror] = {}
+_http_clients: dict[int, httpx.Client] = {}
+_lock = threading.Lock()
+
+
+def _novu_transport() -> typing.Optional[httpx.BaseTransport]:
+    """None: httpx chooses the transport, as it does for the SDK, proxies included.
+    Tests put a fake Novu here."""
+    return None
+
+
+def mirror_from_settings(
+    url: typing.Optional[str] = None, api_key: typing.Optional[str] = None
+) -> typing.Optional[NovuMirror]:
+    """The process's mirror; None when off.
+
+    The URL and the key come together: both from the arguments when either is given,
+    else both from the environment. A pair is never mixed, so a URL passed in code
+    can never receive the key the environment holds for another endpoint.
+    """
+    if url is not None or api_key is not None:
+        url, api_key = (url or "").strip(), (api_key or "").strip()
+    else:
+        url = os.environ.get(MIRROR_URL_ENV, "").strip()
+        api_key = os.environ.get(MIRROR_API_KEY_ENV, "").strip()
+    if not (url and api_key):
+        return None
+    with _lock:
+        if (url, api_key) not in _mirrors:
+            _mirrors[(url, api_key)] = NovuMirror(url, api_key)
+        return _mirrors[(url, api_key)]
+
+
+def _novu_client(
+    api_key: str,
+    mirror_url: typing.Optional[str] = None,
+    mirror_api_key: typing.Optional[str] = None,
+) -> Novu:
+    mirror = mirror_from_settings(mirror_url, mirror_api_key)
+    if mirror is None:
+        return Novu(api_key)
+    # The SDK never closes a client it is given, and services build a Novu client per
+    # injection: every client of the process shares this one.
+    with _lock:
+        client = _http_clients.get(id(mirror))
+        if client is None:
+            # The same client the SDK would build, plus the mirror's response hook.
+            client = httpx.Client(
+                follow_redirects=True,
+                transport=_novu_transport(),
+                event_hooks={"response": [mirror.on_response]},
+            )
+            _http_clients[id(mirror)] = client
+    return Novu(api_key, client=client)
 
 
 @dataclass
@@ -54,8 +119,8 @@ class NotificationResponse:
 
 
 class Notifier:
-    def __init__(self, api_key):
-        self.api = Novu(api_key)
+    def __init__(self, api_key, mirror_url=None, mirror_api_key=None):
+        self.api = _novu_client(api_key, mirror_url, mirror_api_key)
 
     def send_notification(
         self,
@@ -160,8 +225,8 @@ class Notifier:
 
 
 class SubscriberManager:
-    def __init__(self, api_key):
-        self.api = Novu(api_key)
+    def __init__(self, api_key, mirror_url=None, mirror_api_key=None):
+        self.api = _novu_client(api_key, mirror_url, mirror_api_key)
 
     @staticmethod
     def build_collaborator_id(
