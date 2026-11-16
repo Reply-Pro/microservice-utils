@@ -17,7 +17,7 @@ pip install microservice-utils[gcp_pubsub]
 - **gcp_cloud_tasks**: Support for Google Cloud Tasks with the google-cloud-tasks client library.
 - **gcp_pubsub**: Support for Google Cloud Pub/Sub using the google-cloud-pubsub client library and tenacity for retries.
 - **gcp_storage**: Use GCP Cloud Storage with the async gcloud-aio-storage library.
-- **novu**: Support for the open-source [novu](https://novu.co) notification center.
+- **novu**: Support for the open-source [novu](https://novu.co) notification center. Can copy every write Novu accepts to a second, Novu-compatible endpoint (`docs/novu/mirror.md`).
 - **openai**: Support for completions with the OpenAI API.
 - **pinecone**: Support for semantic search with Pinecone. The adapter embeds documents with
   sentence-transformers, so this extra installs it too, and with it PyTorch — expect a large download.

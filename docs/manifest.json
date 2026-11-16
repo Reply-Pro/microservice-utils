@@ -14,6 +14,18 @@
     ],
     "presence": [
       "microservice-utils.presence.shared-event-primitives"
+    ],
+    "novu": [
+      "microservice-utils.novu.mirror"
+    ],
+    "novu-mirror": [
+      "microservice-utils.novu.mirror"
+    ],
+    "notifier": [
+      "microservice-utils.novu.mirror"
+    ],
+    "subscriber-manager": [
+      "microservice-utils.novu.mirror"
     ]
   },
   "documents": [
@@ -43,6 +55,32 @@
       "depends_on": [],
       "status": "current",
       "verified": "2026-10-23"
+    },
+    {
+      "id": "microservice-utils.novu.mirror",
+      "kind": "feature",
+      "topic": "you use the Novu Notifier or SubscriberManager, or need to copy what our services send to Novu to a second, Novu-compatible endpoint",
+      "path": "docs/novu/mirror.md",
+      "aliases": [
+        "novu",
+        "Notifier",
+        "SubscriberManager",
+        "novu mirror",
+        "NOVU_MIRROR_URL",
+        "NOVU_MIRROR_API_KEY",
+        "notification engine"
+      ],
+      "entrypoints": [
+        "microservice_utils/novu/adapters.py",
+        "microservice_utils/novu/mirror.py"
+      ],
+      "related_tests": [
+        "tests/novu/test_adapters.py",
+        "tests/novu/test_mirror.py"
+      ],
+      "depends_on": [],
+      "status": "current",
+      "verified": "2026-11-16"
     }
   ]
 }
