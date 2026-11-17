@@ -49,7 +49,7 @@ the mirror's key, never Novu's.
 - When the queue is full a new copy is dropped and counted (`NovuMirror.dropped`), with a warning
   on the first and every hundredth.
 - Nothing in the mirror raises into the caller. A copy still waiting when the process exits is
-  lost: the mirror is best effort.
+  lost: the mirror is best effort (see `docs/known-issues/novu.md` for where that bites).
 - The SDK retries a failed call for up to an hour, each attempt with a new idempotency key. Only an
   attempt Novu accepted is copied, so a call is copied once.
 
