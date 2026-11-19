@@ -60,7 +60,8 @@ Without `prepend_value` the friendly name is used as is.
 - retries up to 3 attempts with exponential backoff, then raises `PublishError`;
 - batches at most 250 messages per request;
 - builds its Pub/Sub client on the first publish and keeps it; threads that publish first at the
-  same time share the one client. Keep one `Publisher` per process (a singleton in the service's
+  same time share the one client, each `Publisher` builds under a lock of its own, and a process
+  forked while one was building builds its own. Keep one `Publisher` per process (a singleton in the service's
   container) so every publish shares it: a new `Publisher` per publish opens a new client each time.
 
 `Subscriber.subscribe(subscription_name, handler, max_messages=50,

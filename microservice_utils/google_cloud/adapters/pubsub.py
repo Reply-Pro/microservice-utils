@@ -18,13 +18,25 @@ class PublishError(Exception):
     pass
 
 
-# Taken only while a Publisher builds its client, once each: shared by all of
-# them, so a subclass that doesn't call Publisher.__init__ has it too.
-_client_build_lock = threading.Lock()
+# Held only while a Publisher makes its own build lock, so a subclass that
+# doesn't call Publisher.__init__ gets one too.
+_lock_for_build_locks = threading.Lock()
+
+
+def _new_locks_in_child():
+    # A fork copies the lock as held by a thread the child doesn't have.
+    global _lock_for_build_locks
+    _lock_for_build_locks = threading.Lock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_new_locks_in_child)
 
 
 class Publisher:
     _client: pubsub.PublisherClient = None
+    _build_lock: threading.Lock = None
+    _build_lock_pid: int = None
 
     def __init__(self, gcp_project_id: str, *args, prepend_value: str = None, **kwargs):
         self._args = args
@@ -39,12 +51,23 @@ class Publisher:
             f"{friendly_topic_name}"
         )
 
+    def _client_build_lock(self) -> threading.Lock:
+        # Its own, so Publishers build their clients side by side; one made in
+        # another process (before a fork) may be held by a thread not here.
+        pid = os.getpid()
+        if self._build_lock is None or self._build_lock_pid != pid:
+            with _lock_for_build_locks:
+                if self._build_lock is None or self._build_lock_pid != pid:
+                    self._build_lock = threading.Lock()
+                    self._build_lock_pid = pid
+        return self._build_lock
+
     def _get_client(self):
         # One client per Publisher, built on the first publish: threads that
         # publish first at the same time wait for the one that builds it.
-        if not self._client:
-            with _client_build_lock:
-                if not self._client:
+        if self._client is None:
+            with self._client_build_lock():
+                if self._client is None:
                     self._client = pubsub.PublisherClient(
                         *self._args,
                         batch_settings=pubsub.types.BatchSettings(max_messages=250),
