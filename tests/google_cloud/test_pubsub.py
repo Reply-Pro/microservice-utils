@@ -1,6 +1,6 @@
 from unittest import mock
 
-from microservice_utils.google_cloud.adapters.pubsub import Subscriber
+from microservice_utils.google_cloud.adapters.pubsub import Publisher, Subscriber
 
 PATCH_TARGET = "microservice_utils.google_cloud.adapters.pubsub.pubsub.SubscriberClient"
 
@@ -54,3 +54,32 @@ def test_shutdown_cancels_and_drains_every_subscription(client_cls):
     future = client_cls.return_value.subscribe.return_value
     assert future.cancel.call_count == 2
     assert future.result.call_count == 2
+
+
+PUBLISHER_PATCH_TARGET = (
+    "microservice_utils.google_cloud.adapters.pubsub.pubsub.PublisherClient"
+)
+
+
+def test_threads_publishing_first_at_once_share_one_client():
+    """The client is built on the first publish. Two threads that both find it
+    missing used to build one each and drop one."""
+    import threading
+    import time
+
+    built = []
+
+    def slow_client(*args, **kwargs):
+        time.sleep(0.05)
+        built.append(object())
+        return built[-1]
+
+    publisher = Publisher("test-project")
+    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=slow_client):
+        threads = [threading.Thread(target=publisher._get_client) for _ in range(5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+    assert len(built) == 1

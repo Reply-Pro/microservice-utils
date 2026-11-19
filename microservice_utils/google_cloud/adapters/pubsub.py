@@ -1,6 +1,7 @@
 import logging
 import os
 import tenacity
+import threading
 import typing
 
 from google.cloud import pubsub
@@ -25,6 +26,7 @@ class Publisher:
         self._kwargs = kwargs
         self._gcp_project_id = gcp_project_id
         self._prepend_value = prepend_value
+        self._client_lock = threading.Lock()
 
     def format_topic_name(self, friendly_topic_name: str) -> str:
         return (
@@ -34,12 +36,16 @@ class Publisher:
         )
 
     def _get_client(self):
+        # One client per Publisher, built on the first publish: threads that
+        # publish first at the same time wait for the one that builds it.
         if not self._client:
-            self._client = pubsub.PublisherClient(
-                *self._args,
-                batch_settings=pubsub.types.BatchSettings(max_messages=250),
-                **self._kwargs,
-            )
+            with self._client_lock:
+                if not self._client:
+                    self._client = pubsub.PublisherClient(
+                        *self._args,
+                        batch_settings=pubsub.types.BatchSettings(max_messages=250),
+                        **self._kwargs,
+                    )
 
         return self._client
 
