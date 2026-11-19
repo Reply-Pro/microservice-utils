@@ -83,3 +83,12 @@ def test_threads_publishing_first_at_once_share_one_client():
             thread.join()
 
     assert len(built) == 1
+
+
+def test_a_subclass_that_skips_init_still_builds_its_client():
+    class Fake(Publisher):
+        def __init__(self):
+            self._args, self._kwargs = (), {}
+
+    with mock.patch(PUBLISHER_PATCH_TARGET) as client_cls:
+        assert Fake()._get_client() is client_cls.return_value

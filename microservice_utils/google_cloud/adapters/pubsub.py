@@ -18,6 +18,11 @@ class PublishError(Exception):
     pass
 
 
+# Taken only while a Publisher builds its client, once each: shared by all of
+# them, so a subclass that doesn't call Publisher.__init__ has it too.
+_client_build_lock = threading.Lock()
+
+
 class Publisher:
     _client: pubsub.PublisherClient = None
 
@@ -26,7 +31,6 @@ class Publisher:
         self._kwargs = kwargs
         self._gcp_project_id = gcp_project_id
         self._prepend_value = prepend_value
-        self._client_lock = threading.Lock()
 
     def format_topic_name(self, friendly_topic_name: str) -> str:
         return (
@@ -39,7 +43,7 @@ class Publisher:
         # One client per Publisher, built on the first publish: threads that
         # publish first at the same time wait for the one that builds it.
         if not self._client:
-            with self._client_lock:
+            with _client_build_lock:
                 if not self._client:
                     self._client = pubsub.PublisherClient(
                         *self._args,
