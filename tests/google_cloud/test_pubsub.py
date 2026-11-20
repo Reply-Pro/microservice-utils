@@ -218,6 +218,23 @@ def test_a_child_forked_after_the_client_is_built_builds_its_own():
     assert status == 0
 
 
+def test_a_client_is_never_stored_without_the_pid_that_built_it():
+    """A fork between the two would leave the child a client that reads as
+    handed in, which it keeps for good."""
+    pids_when_stored = []
+
+    class Watched(Publisher):
+        def __setattr__(self, name, value):
+            if name == "_client" and value is not None:
+                pids_when_stored.append(self._client_pid)
+            super().__setattr__(name, value)
+
+    with mock.patch(PUBLISHER_PATCH_TARGET):
+        Watched("test-project")._get_client()
+
+    assert pids_when_stored == [os.getpid()]
+
+
 def test_a_client_handed_in_is_kept():
     """A test or fake that sets ``_client`` itself keeps it."""
     publisher = Publisher("test-project")

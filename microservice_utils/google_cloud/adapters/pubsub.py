@@ -82,12 +82,17 @@ class Publisher:
         if self._client_missing():
             with self._client_build_lock():
                 if self._client_missing():
-                    self._client = pubsub.PublisherClient(
+                    client = pubsub.PublisherClient(
                         *self._args,
                         batch_settings=pubsub.types.BatchSettings(max_messages=250),
                         **self._kwargs,
                     )
+                    # A fork between these lines must not find a client with
+                    # no pid, which reads as one handed in, nor the parent's
+                    # client under this process's pid.
+                    self._client = None
                     self._client_pid = os.getpid()
+                    self._client = client
 
         return self._client
 
