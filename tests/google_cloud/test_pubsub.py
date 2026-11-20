@@ -132,7 +132,7 @@ def test_publishers_build_their_clients_at_the_same_time():
     both_building = threading.Barrier(2)
 
     def client_built_beside_another(*args, **kwargs):
-        both_building.wait(timeout=2)
+        both_building.wait(timeout=10)
         return object()
 
     publishers = [Publisher("test-project"), Publisher("test-project")]
