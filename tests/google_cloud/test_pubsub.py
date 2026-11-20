@@ -186,6 +186,23 @@ def test_a_publisher_whose_build_failed_can_still_be_copied():
             assert other._get_client() is client_cls.return_value
 
 
+def test_a_publisher_that_published_can_be_copied():
+    """The client it built stays behind, as its lock does: the copy builds
+    its own on its first publish."""
+    publisher = Publisher("test-project", prepend_value="staging")
+    # Something that can't be copied or pickled, as a client can't.
+    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=lambda *a, **k: threading.Lock()):
+        built = publisher._get_client()
+
+    copied = copy.deepcopy(publisher)
+    unpickled = pickle.loads(pickle.dumps(publisher))
+
+    assert publisher._get_client() is built
+    for other in (copied, unpickled):
+        with mock.patch(PUBLISHER_PATCH_TARGET) as client_cls:
+            assert other._get_client() is client_cls.return_value
+
+
 def test_a_subclass_that_skips_init_still_builds_its_client():
     class Fake(Publisher):
         def __init__(self):

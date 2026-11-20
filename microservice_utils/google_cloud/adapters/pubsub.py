@@ -55,11 +55,17 @@ class Publisher:
         )
 
     def __getstate__(self):
-        # A lock can't be copied or pickled; a copy makes its own.
+        # A lock can't be copied or pickled; a copy makes its own, and builds
+        # its own client.
         state = self.__dict__.copy()
         state.pop("_build_lock", None)
         state.pop("_build_lock_pid", None)
         state.pop("_build_error", None)
+        if state.get("_client_pid") is not None:
+            # Built here: a channel can't be copied either. One handed in
+            # goes with the copy.
+            state.pop("_client", None)
+            state.pop("_client_pid", None)
         return state
 
     def _client_build_lock(self) -> threading.Lock:
