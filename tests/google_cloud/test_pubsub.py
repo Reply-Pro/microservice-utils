@@ -191,7 +191,9 @@ def test_a_publisher_that_published_can_be_copied():
     its own on its first publish."""
     publisher = Publisher("test-project", prepend_value="staging")
     # Something that can't be copied or pickled, as a client can't.
-    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=lambda *a, **k: threading.Lock()):
+    with mock.patch(
+        PUBLISHER_PATCH_TARGET, side_effect=lambda *a, **k: threading.Lock()
+    ):
         built = publisher._get_client()
 
     copied = copy.deepcopy(publisher)

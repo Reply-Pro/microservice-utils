@@ -99,9 +99,7 @@ class Publisher:
                     try:
                         client = pubsub.PublisherClient(
                             *self._args,
-                            batch_settings=pubsub.types.BatchSettings(
-                                max_messages=250
-                            ),
+                            batch_settings=pubsub.types.BatchSettings(max_messages=250),
                             **self._kwargs,
                         )
                     except Exception as error:
