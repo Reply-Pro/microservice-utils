@@ -58,7 +58,16 @@ Without `prepend_value` the friendly name is used as is.
 
 - waits for Pub/Sub to accept the message and returns its message id;
 - retries up to 3 attempts with exponential backoff, then raises `PublishError`;
-- batches at most 250 messages per request.
+- batches at most 250 messages per request;
+- builds its Pub/Sub client on the first publish and keeps it; threads that publish first at the
+  same time share the one client, and each `Publisher` builds under a lock of its own. When the
+  build fails, the threads that waited for it fail with its error, and the next publish (a retry
+  included) builds again. A copy or a pickle of a `Publisher` builds its own client. A process
+  forked from one that built a client, or was building one, builds its own on its first publish,
+  since a gRPC channel doesn't survive a fork. A fork in the middle of the build can still hang on
+  locks inside google-auth or gRPC: create a worker's `Publisher` after it forks where you can. Keep
+  one `Publisher` per process (a singleton in the service's container) so every publish shares it: a
+  new `Publisher` per publish opens a new client each time.
 
 `Subscriber.subscribe(subscription_name, handler, max_messages=50,
 await_callbacks_on_shutdown=False, **kwargs)`:

@@ -1,6 +1,7 @@
 import logging
 import os
 import tenacity
+import threading
 import typing
 
 from google.cloud import pubsub
@@ -17,8 +18,28 @@ class PublishError(Exception):
     pass
 
 
+# Held only while a Publisher makes its own build lock, so a subclass that
+# doesn't call Publisher.__init__ gets one too.
+_lock_for_build_locks = threading.Lock()
+
+
+def _new_locks_in_child():
+    # A fork copies the lock as held by a thread the child doesn't have.
+    global _lock_for_build_locks
+    _lock_for_build_locks = threading.Lock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_new_locks_in_child)
+
+
 class Publisher:
     _client: pubsub.PublisherClient = None
+    _client_pid: int = None
+    _build_lock: threading.Lock = None
+    _build_lock_pid: int = None
+    _builds_failed: int = 0
+    _build_error: Exception = None
 
     def __init__(self, gcp_project_id: str, *args, prepend_value: str = None, **kwargs):
         self._args = args
@@ -33,13 +54,64 @@ class Publisher:
             f"{friendly_topic_name}"
         )
 
+    def __getstate__(self):
+        # A lock can't be copied or pickled; a copy makes its own, and builds
+        # its own client.
+        state = self.__dict__.copy()
+        state.pop("_build_lock", None)
+        state.pop("_build_lock_pid", None)
+        state.pop("_build_error", None)
+        if state.get("_client_pid") is not None:
+            # Built here: a channel can't be copied either. One handed in
+            # goes with the copy.
+            state.pop("_client", None)
+            state.pop("_client_pid", None)
+        return state
+
+    def _client_build_lock(self) -> threading.Lock:
+        # Its own, so Publishers build their clients side by side; one made in
+        # another process (before a fork) may be held by a thread not here.
+        pid = os.getpid()
+        if self._build_lock is None or self._build_lock_pid != pid:
+            with _lock_for_build_locks:
+                if self._build_lock is None or self._build_lock_pid != pid:
+                    self._build_lock = threading.Lock()
+                    self._build_lock_pid = pid
+        return self._build_lock
+
+    def _client_missing(self) -> bool:
+        # A gRPC channel doesn't survive a fork: a child builds its own. One
+        # handed in (no pid) is kept.
+        return self._client is None or self._client_pid not in (None, os.getpid())
+
     def _get_client(self):
-        if not self._client:
-            self._client = pubsub.PublisherClient(
-                *self._args,
-                batch_settings=pubsub.types.BatchSettings(max_messages=250),
-                **self._kwargs,
-            )
+        # One client per Publisher and process, built on the first publish:
+        # threads that publish first at the same time wait for the one that
+        # builds it.
+        if self._client_missing():
+            builds_failed = self._builds_failed
+            with self._client_build_lock():
+                if self._client_missing():
+                    if self._builds_failed != builds_failed:
+                        # The build it waited for failed: its own would wait
+                        # out the same failure, one thread after another.
+                        raise self._build_error
+                    try:
+                        client = pubsub.PublisherClient(
+                            *self._args,
+                            batch_settings=pubsub.types.BatchSettings(max_messages=250),
+                            **self._kwargs,
+                        )
+                    except Exception as error:
+                        self._build_error = error
+                        self._builds_failed += 1
+                        raise
+                    # A fork between these lines must not find a client with
+                    # no pid, which reads as one handed in, nor the parent's
+                    # client under this process's pid.
+                    self._client = None
+                    self._client_pid = os.getpid()
+                    self._client = client
 
         return self._client
 
