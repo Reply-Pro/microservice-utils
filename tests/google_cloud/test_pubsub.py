@@ -1,4 +1,6 @@
+import copy
 import os
+import pickle
 import signal
 import threading
 import time
@@ -139,6 +141,25 @@ def test_publishers_build_their_clients_at_the_same_time():
 
     assert raised == []
     assert len(returned) == 2
+
+
+def test_a_publisher_whose_build_failed_can_still_be_copied():
+    """It holds its build lock by then, which can't be pickled: as before the
+    lock, a Publisher with no client is copied and pickled."""
+    publisher = Publisher("test-project", prepend_value="staging")
+    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=RuntimeError("no creds")):
+        with pytest.raises(RuntimeError):
+            publisher._get_client()
+
+    copied = copy.deepcopy(publisher)
+    unpickled = pickle.loads(pickle.dumps(publisher))
+
+    for other in (copied, unpickled):
+        assert other.format_topic_name("events") == publisher.format_topic_name(
+            "events"
+        )
+        with mock.patch(PUBLISHER_PATCH_TARGET) as client_cls:
+            assert other._get_client() is client_cls.return_value
 
 
 def test_a_subclass_that_skips_init_still_builds_its_client():

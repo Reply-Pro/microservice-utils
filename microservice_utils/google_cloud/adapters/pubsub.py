@@ -52,6 +52,13 @@ class Publisher:
             f"{friendly_topic_name}"
         )
 
+    def __getstate__(self):
+        # A lock can't be copied or pickled; a copy makes its own.
+        state = self.__dict__.copy()
+        state.pop("_build_lock", None)
+        state.pop("_build_lock_pid", None)
+        return state
+
     def _client_build_lock(self) -> threading.Lock:
         # Its own, so Publishers build their clients side by side; one made in
         # another process (before a fork) may be held by a thread not here.
