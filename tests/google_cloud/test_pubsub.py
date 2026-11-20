@@ -85,7 +85,24 @@ def _in_threads(count, target):
         thread.start()
     for thread in threads:
         thread.join(timeout=10)
+    # A deadlock fails as one, not as a short list.
+    assert not any(thread.is_alive() for thread in threads)
     return returned, raised
+
+
+def _in_child(check):
+    """Runs ``check`` in a forked child; its exit status: 0 when it held, 1
+    when it didn't, 2 when it raised, killed by the alarm when it hung. The
+    child never returns to pytest."""
+    child = os.fork()
+    if child == 0:
+        try:
+            signal.alarm(3)
+            os._exit(0 if check() else 1)
+        except BaseException:
+            os._exit(2)
+    _, status = os.waitpid(child, 0)
+    return os.WEXITSTATUS(status) if os.WIFEXITED(status) else -1
 
 
 def test_threads_publishing_first_at_once_share_one_client():
@@ -133,7 +150,15 @@ def test_a_subclass_that_skips_init_still_builds_its_client():
         assert Fake()._get_client() is client_cls.return_value
 
 
-@pytest.mark.skipif(not hasattr(os, "fork"), reason="needs os.fork")
+needs_fork = pytest.mark.skipif(not hasattr(os, "fork"), reason="needs os.fork")
+# Python warns of a fork while other threads run; that is what these test.
+forks_beside_threads = pytest.mark.filterwarnings(
+    "ignore:This process .* is multi-threaded:DeprecationWarning"
+)
+
+
+@needs_fork
+@forks_beside_threads
 def test_a_child_forked_while_its_client_is_built_builds_its_own():
     """The child gets the lock as held by a thread it doesn't have: it must
     not wait for it."""
@@ -144,20 +169,17 @@ def test_a_child_forked_while_its_client_is_built_builds_its_own():
         finish.wait(timeout=5)
         return object()
 
+    def builds():
+        finish.set()
+        return publisher._get_client() is not None
+
     publisher = Publisher("test-project")
     with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=held_client):
         builder = threading.Thread(target=publisher._get_client)
         builder.start()
         assert building.wait(timeout=5)
-        child = os.fork()
-        if child == 0:
-            # Killed by the alarm if it waits for the lock.
-            signal.alarm(3)
-            finish.set()
-            publisher._get_client()
-            os._exit(0)
+        status = _in_child(builds)
         finish.set()
         builder.join(timeout=5)
-        _, status = os.waitpid(child, 0)
 
-    assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0
+    assert status == 0
