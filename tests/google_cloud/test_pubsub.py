@@ -67,20 +67,20 @@ PUBLISHER_PATCH_TARGET = (
 )
 
 
-def _in_threads(count, target):
-    """Runs ``target`` in ``count`` threads that start it together; what each
-    returned, and what any raised."""
-    start = threading.Barrier(count)
+def _in_threads(targets):
+    """Runs each of ``targets`` in a thread of its own, all started together;
+    what each returned, and what any raised."""
+    start = threading.Barrier(len(targets))
     returned, raised = [], []
 
-    def run():
+    def run(target):
         try:
             start.wait(timeout=5)
             returned.append(target())
         except Exception as error:
             raised.append(error)
 
-    threads = [threading.Thread(target=run) for _ in range(count)]
+    threads = [threading.Thread(target=run, args=(target,)) for target in targets]
     for thread in threads:
         thread.start()
     for thread in threads:
@@ -117,7 +117,7 @@ def test_threads_publishing_first_at_once_share_one_client():
 
     publisher = Publisher("test-project")
     with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=slow_client):
-        returned, raised = _in_threads(5, publisher._get_client)
+        returned, raised = _in_threads([publisher._get_client] * 5)
 
     assert raised == []
     assert len(built) == 1
@@ -133,9 +133,9 @@ def test_publishers_build_their_clients_at_the_same_time():
         both_building.wait(timeout=2)
         return object()
 
-    publishers = iter([Publisher("test-project"), Publisher("test-project")])
+    publishers = [Publisher("test-project"), Publisher("test-project")]
     with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=client_built_beside_another):
-        returned, raised = _in_threads(2, lambda: next(publishers)._get_client())
+        returned, raised = _in_threads([each._get_client for each in publishers])
 
     assert raised == []
     assert len(returned) == 2
