@@ -16,16 +16,21 @@
       "microservice-utils.presence.shared-event-primitives"
     ],
     "novu": [
-      "microservice-utils.novu.mirror"
+      "microservice-utils.novu.mirror",
+      "microservice-utils.known-issues.novu"
     ],
     "novu-mirror": [
-      "microservice-utils.novu.mirror"
+      "microservice-utils.novu.mirror",
+      "microservice-utils.known-issues.novu"
     ],
     "notifier": [
       "microservice-utils.novu.mirror"
     ],
     "subscriber-manager": [
       "microservice-utils.novu.mirror"
+    ],
+    "known-issues": [
+      "microservice-utils.known-issues.novu"
     ]
   },
   "documents": [
@@ -81,6 +86,20 @@
       "depends_on": [],
       "status": "current",
       "verified": "2026-11-16"
+    },
+    {
+      "id": "microservice-utils.known-issues.novu",
+      "kind": "reference",
+      "path": "docs/known-issues/novu.md",
+      "topic": "you need the open problems in the Novu adapters and mirror, for example why the notification engine misses copies of notifications Novu sent",
+      "aliases": [
+        "known novu issues",
+        "mirror lost copies",
+        "mirror best effort"
+      ],
+      "entrypoints": [],
+      "status": "current",
+      "verified": "2026-11-17"
     }
   ]
 }
