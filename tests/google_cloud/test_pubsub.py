@@ -143,6 +143,30 @@ def test_publishers_build_their_clients_at_the_same_time():
     assert len(returned) == 2
 
 
+def test_threads_waiting_for_a_build_that_fails_fail_with_it():
+    """Each used to try its own build once the one before had failed: with a
+    metadata server down, the fifth waited five timeouts."""
+    built = []
+
+    def slow_failure(*args, **kwargs):
+        built.append(None)
+        time.sleep(0.2)
+        raise RuntimeError("no creds")
+
+    publisher = Publisher("test-project")
+    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=slow_failure):
+        returned, raised = _in_threads([publisher._get_client] * 5)
+
+        assert returned == []
+        assert [str(error) for error in raised] == ["no creds"] * 5
+        assert len(built) == 1
+
+        # The next attempt builds again.
+        with pytest.raises(RuntimeError):
+            publisher._get_client()
+        assert len(built) == 2
+
+
 def test_a_publisher_whose_build_failed_can_still_be_copied():
     """It holds its build lock by then, which can't be pickled: as before the
     lock, a Publisher with no client is copied and pickled."""

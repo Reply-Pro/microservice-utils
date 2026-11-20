@@ -38,6 +38,8 @@ class Publisher:
     _client_pid: int = None
     _build_lock: threading.Lock = None
     _build_lock_pid: int = None
+    _builds_failed: int = 0
+    _build_error: Exception = None
 
     def __init__(self, gcp_project_id: str, *args, prepend_value: str = None, **kwargs):
         self._args = args
@@ -57,6 +59,7 @@ class Publisher:
         state = self.__dict__.copy()
         state.pop("_build_lock", None)
         state.pop("_build_lock_pid", None)
+        state.pop("_build_error", None)
         return state
 
     def _client_build_lock(self) -> threading.Lock:
@@ -80,13 +83,25 @@ class Publisher:
         # threads that publish first at the same time wait for the one that
         # builds it.
         if self._client_missing():
+            builds_failed = self._builds_failed
             with self._client_build_lock():
                 if self._client_missing():
-                    client = pubsub.PublisherClient(
-                        *self._args,
-                        batch_settings=pubsub.types.BatchSettings(max_messages=250),
-                        **self._kwargs,
-                    )
+                    if self._builds_failed != builds_failed:
+                        # The build it waited for failed: its own would wait
+                        # out the same failure, one thread after another.
+                        raise self._build_error
+                    try:
+                        client = pubsub.PublisherClient(
+                            *self._args,
+                            batch_settings=pubsub.types.BatchSettings(
+                                max_messages=250
+                            ),
+                            **self._kwargs,
+                        )
+                    except Exception as error:
+                        self._build_error = error
+                        self._builds_failed += 1
+                        raise
                     # A fork between these lines must not find a client with
                     # no pid, which reads as one handed in, nor the parent's
                     # client under this process's pid.
