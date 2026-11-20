@@ -183,3 +183,25 @@ def test_a_child_forked_while_its_client_is_built_builds_its_own():
         builder.join(timeout=5)
 
     assert status == 0
+
+
+@needs_fork
+def test_a_child_forked_after_the_client_is_built_builds_its_own():
+    """A gRPC channel doesn't survive a fork: a worker forked from a process
+    that already published must not publish over its parent's."""
+    publisher = Publisher("test-project")
+    with mock.patch(PUBLISHER_PATCH_TARGET, side_effect=lambda *a, **k: object()):
+        parents = publisher._get_client()
+        status = _in_child(lambda: publisher._get_client() is not parents)
+
+    assert status == 0
+
+
+def test_a_client_handed_in_is_kept():
+    """A test or fake that sets ``_client`` itself keeps it."""
+    publisher = Publisher("test-project")
+    publisher._client = given = object()
+
+    with mock.patch(PUBLISHER_PATCH_TARGET) as client_cls:
+        assert publisher._get_client() is given
+    client_cls.assert_not_called()

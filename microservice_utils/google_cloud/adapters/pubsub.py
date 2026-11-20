@@ -35,6 +35,7 @@ if hasattr(os, "register_at_fork"):
 
 class Publisher:
     _client: pubsub.PublisherClient = None
+    _client_pid: int = None
     _build_lock: threading.Lock = None
     _build_lock_pid: int = None
 
@@ -62,17 +63,24 @@ class Publisher:
                     self._build_lock_pid = pid
         return self._build_lock
 
+    def _client_missing(self) -> bool:
+        # A gRPC channel doesn't survive a fork: a child builds its own. One
+        # handed in (no pid) is kept.
+        return self._client is None or self._client_pid not in (None, os.getpid())
+
     def _get_client(self):
-        # One client per Publisher, built on the first publish: threads that
-        # publish first at the same time wait for the one that builds it.
-        if self._client is None:
+        # One client per Publisher and process, built on the first publish:
+        # threads that publish first at the same time wait for the one that
+        # builds it.
+        if self._client_missing():
             with self._client_build_lock():
-                if self._client is None:
+                if self._client_missing():
                     self._client = pubsub.PublisherClient(
                         *self._args,
                         batch_settings=pubsub.types.BatchSettings(max_messages=250),
                         **self._kwargs,
                     )
+                    self._client_pid = os.getpid()
 
         return self._client
 
