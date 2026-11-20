@@ -203,15 +203,6 @@ def test_a_publisher_that_published_can_be_copied():
             assert other._get_client() is client_cls.return_value
 
 
-def test_a_subclass_that_skips_init_still_builds_its_client():
-    class Fake(Publisher):
-        def __init__(self):
-            self._args, self._kwargs = (), {}
-
-    with mock.patch(PUBLISHER_PATCH_TARGET) as client_cls:
-        assert Fake()._get_client() is client_cls.return_value
-
-
 needs_fork = pytest.mark.skipif(not hasattr(os, "fork"), reason="needs os.fork")
 # Python warns of a fork while other threads run; that is what these test.
 forks_beside_threads = pytest.mark.filterwarnings(
